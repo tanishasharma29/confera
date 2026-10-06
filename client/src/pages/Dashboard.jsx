@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/react'
 import {
   ShieldCheck,
   Plus,
@@ -8,18 +9,54 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate()
+  const { user, isLoaded } = useUser()
+
   const [meetingCode, setMeetingCode] = useState('')
+  const [currentDateTime, setCurrentDateTime] = useState(new Date())
 
-  // Dummy data for the dashboard
-  const user = {
-    name: 'Alex Rivera',
-    email: 'alex.rivera@example.com',
-    plan: 'PREMIUM',
-    meetings: '8 Created (Unlimited)',
-  }
+  // Update date and time automatically
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date())
+    }, 1000)
 
-  const meetingDate = 'Monday, August 17, 2026'
-  const meetingTime = '02:40 PM'
+    return () => clearInterval(timer)
+  }, [])
+
+  // Current logged-in user's details
+  const userName =
+    user?.fullName ||
+    user?.firstName ||
+    'User'
+
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    ''
+
+  // Current date
+  const meetingDate = currentDateTime.toLocaleDateString(
+    'en-US',
+    {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }
+  )
+
+  // Current time
+  const meetingTime = currentDateTime.toLocaleTimeString(
+    'en-US',
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }
+  )
+
+  // Keep the existing dummy plan/meeting information
+  const userPlan = 'PREMIUM'
+  const userMeetings = '8 Created (Unlimited)'
 
   // Create a dummy meeting and open the meeting page
   const handleNewMeeting = () => {
@@ -36,6 +73,17 @@ const Dashboard = () => {
     }
 
     navigate(`/meeting/${code}`)
+  }
+
+  // Wait until Clerk has loaded the current user
+  if (!isLoaded) {
+    return (
+      <div className="min-h-[calc(100vh-140px)] flex items-center justify-center">
+        <p className="text-slate-600">
+          Loading...
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -118,7 +166,7 @@ const Dashboard = () => {
 
               {/* Greeting */}
               <p className="text-sm font-medium text-slate-600">
-                Hi, {user.name}
+                Hi, {userName}
               </p>
 
               {/* Time */}
@@ -143,13 +191,13 @@ const Dashboard = () => {
                     </p>
 
                     <p className="mt-1 text-sm font-medium text-slate-700 truncate">
-                      {user.email}
+                      {userEmail}
                     </p>
                   </div>
 
                   {/* Premium badge */}
                   <span className="shrink-0 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-bold tracking-wide text-white">
-                    {user.plan}
+                    {userPlan}
                   </span>
 
                 </div>
@@ -167,7 +215,7 @@ const Dashboard = () => {
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-slate-700">
-                      {user.meetings}
+                      {userMeetings}
                     </p>
                   </div>
 
