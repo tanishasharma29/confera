@@ -1,16 +1,13 @@
+import { useAuth } from '@clerk/react'
 import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
-import { useUser } from '@clerk/react'
+import Loader from './Loader'
 
 const ProtectedRoute = () => {
-  const { isLoaded, isSignedIn } = useUser()
+  const { isLoaded, isSignedIn } = useAuth()
 
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    )
+    return <Loader text="Authenticating" />
   }
 
   if (!isSignedIn) {
