@@ -1,10 +1,8 @@
 import React from 'react'
 import {
   CalendarIcon,
-  ClockIcon,
-  UsersIcon,
   MessageSquareIcon,
-  ArrowRightIcon,
+  UsersIcon,
 } from 'lucide-react'
 
 const SessionCard = ({
@@ -15,106 +13,93 @@ const SessionCard = ({
   const isEnded = session.status === 'ended'
 
   return (
-    <div className="bg-white/70 backdrop-blur rounded-3xl p-6 transition-all flex flex-col justify-between space-y-5 border border-slate-100/60 shadow-xs hover:shadow-md">
-
+    <div className="bg-white/70 backdrop-blur rounded-3xl p-6 border border-white/60 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
       {/* Top section */}
-      <div className="space-y-3">
-
-        {/* Meeting ID + Status */}
+      <div className="space-y-5">
+        {/* ID and status */}
         <div className="flex items-center justify-between gap-3">
-
-          <span className="text-xs font-mono text-slate-500 font-medium bg-slate-500/10 px-2.5 py-1 rounded-md">
+          <span className="text-xs font-mono text-slate-500 font-medium bg-slate-100/80 px-2.5 py-1.5 rounded-md">
             ID: {session.meetingId}
           </span>
 
           <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${
               isEnded
-                ? 'bg-slate-500/10 text-slate-500'
-                : 'bg-emerald-500/10 text-emerald-500'
+                ? 'bg-slate-100 text-slate-500'
+                : 'bg-emerald-50 text-emerald-600'
             }`}
           >
             <span
-              className={`size-1.5 rounded-full ${
+              className={`w-1.5 h-1.5 rounded-full ${
                 isEnded
                   ? 'bg-slate-400'
                   : 'bg-emerald-500'
               }`}
-            ></span>
+            />
 
             {isEnded ? 'Ended' : 'Active'}
           </span>
-
         </div>
 
         {/* Meeting title */}
-        <h3 className="text-lg font-semibold text-slate-800 leading-snug">
+        <h2 className="text-xl font-medium tracking-tight text-slate-800">
           {session.title}
-        </h3>
+        </h2>
 
         {/* Date and time */}
-        <div className="flex flex-col gap-2 text-sm text-slate-500">
-
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4" />
-            <span>{session.date}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ClockIcon className="w-4 h-4" />
-            <span>{session.time}</span>
-          </div>
-
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <CalendarIcon size={16} />
+          <span>{session.date}</span>
         </div>
 
-      </div>
+        {/* Participants and messages */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-2 bg-slate-50/80 rounded-xl px-3 py-2.5">
+            <UsersIcon
+              size={16}
+              className="text-slate-500"
+            />
 
-      {/* Bottom section */}
-      <div className="pt-4 border-t border-slate-200/70">
-
-        {/* Participants + messages */}
-        <div className="flex items-center justify-between text-xs text-slate-500 mb-4">
-
-          <div className="flex items-center gap-2">
-            <UsersIcon className="w-4 h-4" />
-            <span>
+            <span className="text-sm text-slate-600">
               {session.participants} Participants
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <MessageSquareIcon className="w-4 h-4" />
-            <span>
+          <div className="flex items-center gap-2 bg-slate-50/80 rounded-xl px-3 py-2.5">
+            <MessageSquareIcon
+              size={16}
+              className="text-slate-500"
+            />
+
+            <span className="text-sm text-slate-600">
               {session.messages} Messages
             </span>
           </div>
-
         </div>
-
-        {/* Buttons */}
-        <div className="flex items-center gap-2">
-
-          <button
-            onClick={() => onOpenDetails(session)}
-            className="flex-1 rounded-full border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-white transition-all"
-          >
-            View Details
-          </button>
-
-          {!isEnded && (
-            <button
-              onClick={() => onRejoin(session.meetingId)}
-              className="flex-1 rounded-full bg-primary hover:bg-primary-hover text-white px-4 py-2.5 text-sm font-medium transition-all inline-flex items-center justify-center gap-2"
-            >
-              Rejoin
-              <ArrowRightIcon className="w-4 h-4" />
-            </button>
-          )}
-
-        </div>
-
       </div>
 
+      {/* Bottom buttons */}
+      <div className="grid grid-cols-2 gap-3 mt-5">
+        <button
+          type="button"
+          onClick={() => onOpenDetails(session)}
+          className="w-full rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2.5 transition-colors"
+        >
+          View Details
+        </button>
+
+        {!isEnded ? (
+          <button
+            type="button"
+            onClick={() => onRejoin(session)}
+            className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 transition-colors"
+          >
+            Re-join
+          </button>
+        ) : (
+          <div />
+        )}
+      </div>
     </div>
   )
 }

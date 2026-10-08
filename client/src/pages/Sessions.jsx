@@ -1,265 +1,291 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeftIcon,
-  XIcon,
+  ArrowLeft,
+  CalendarDays,
+  MessageSquare,
+  Users,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
 
 import SessionCard from '../components/sessions/SessionCard'
 import EmptySessions from '../components/sessions/EmptySessions'
+import SessionDetailModal from '../components/sessions/SessionDetailModal'
 
 const Sessions = () => {
   const navigate = useNavigate()
 
   const [selectedSession, setSelectedSession] = useState(null)
 
-  // Dummy session data for now.
-  // Later this will come from the backend/database.
-  const [sessions] = useState([
+  const sessions = [
     {
-      id: 1,
-      meetingId: 'que-try-616',
+      id: 'qwe-rty-uio',
       title: 'Sprint Planning & Roadmap Review',
+      date: 'Aug 14, 2026, 03:00 PM',
       status: 'ended',
-      date: 'Aug 14, 2026',
-      time: '06:00 PM',
       participants: 4,
-      messages: 12,
-    },
-    {
-      id: 2,
-      meetingId: 'zxc-vbn-mas',
-      title: 'Product Design Critique & Demo',
-      status: 'active',
-      date: 'Aug 14, 2026',
-      time: '07:45 PM',
-      participants: 3,
-      messages: 8,
-    },
-    {
-      id: 3,
-      meetingId: 'abc-def-ghi',
-      title: 'Weekly Engineering Standup',
-      status: 'ended',
-      date: 'Aug 13, 2026',
-      time: '09:30 PM',
-      participants: 2,
-      messages: 6,
-    },
-  ])
+      messages: 4,
+      host: 'Alex Rivera',
+      createdAt: '8/14/2026, 3:00:00 PM',
 
-  const openSessionDetails = (session) => {
+      participantList: [
+        {
+          name: 'Alex Rivera',
+          email: 'alex.rivera@example.com',
+          joinedAt: '03:00 PM',
+          isHost: true,
+        },
+        {
+          name: 'Sarah Chen',
+          email: 'sarah.chen@example.com',
+          joinedAt: '03:02 PM',
+          isHost: false,
+        },
+        {
+          name: 'David Kim',
+          email: 'david.kim@example.com',
+          joinedAt: '03:04 PM',
+          isHost: false,
+        },
+        {
+          name: 'Emma Wilson',
+          email: 'emma.wilson@example.com',
+          joinedAt: '03:05 PM',
+          isHost: false,
+        },
+      ],
+
+      chatMessages: [
+        {
+          sender: 'Sarah Chen',
+          message: 'The roadmap looks great. I think we are ready to move forward.',
+          time: '03:08 PM',
+        },
+        {
+          sender: 'Alex Rivera',
+          message: 'Perfect. I will share the updated roadmap with the team.',
+          time: '03:10 PM',
+        },
+        {
+          sender: 'David Kim',
+          message: 'Sounds good to me.',
+          time: '03:12 PM',
+        },
+        {
+          sender: 'Emma Wilson',
+          message: 'Thanks everyone.',
+          time: '03:14 PM',
+        },
+      ],
+    },
+
+    {
+      id: 'zxc-vbn-mas',
+      title: 'Product Design Critique & Demo',
+      date: 'Aug 14, 2026, 07:45 PM',
+      status: 'active',
+      participants: 3,
+      messages: 2,
+      host: 'Sarah Chen',
+      createdAt: '8/14/2026, 7:45:00 PM',
+
+      participantList: [
+        {
+          name: 'Sarah Chen',
+          email: 'sarah.chen@example.com',
+          joinedAt: '07:45 PM',
+          isHost: true,
+        },
+        {
+          name: 'Alex Rivera',
+          email: 'alex.rivera@example.com',
+          joinedAt: '07:46 PM',
+          isHost: false,
+        },
+        {
+          name: 'David Kim',
+          email: 'david.kim@example.com',
+          joinedAt: '07:48 PM',
+          isHost: false,
+        },
+      ],
+
+      chatMessages: [
+        {
+          sender: 'Sarah Chen',
+          message: 'Sharing my screen now to show the updated mobile layout.',
+          time: '07:47 PM',
+        },
+        {
+          sender: 'Alex Rivera',
+          message: 'The new sidebar drawer looks super clean!',
+          time: '07:49 PM',
+        },
+      ],
+    },
+
+    {
+      id: 'abc-def-ghi',
+      title: 'Weekly Engineering Standup',
+      date: 'Aug 13, 2026, 06:30 PM',
+      status: 'ended',
+      participants: 2,
+      messages: 1,
+      host: 'David Kim',
+      createdAt: '8/13/2026, 6:30:00 PM',
+
+      participantList: [
+        {
+          name: 'David Kim',
+          email: 'david.kim@example.com',
+          joinedAt: '06:30 PM',
+          isHost: true,
+        },
+        {
+          name: 'Alex Rivera',
+          email: 'alex.rivera@example.com',
+          joinedAt: '06:31 PM',
+          isHost: false,
+        },
+      ],
+
+      chatMessages: [
+        {
+          sender: 'David Kim',
+          message: 'Everything is on track for this week.',
+          time: '06:35 PM',
+        },
+      ],
+    },
+  ]
+
+  const handleViewDetails = (session) => {
     setSelectedSession(session)
   }
 
-  const closeSessionDetails = () => {
+  const handleCloseDetails = () => {
     setSelectedSession(null)
   }
 
-  const handleRejoin = (meetingId) => {
-    navigate(`/meeting/${meetingId}`)
+  const handleRejoin = (session) => {
+    navigate(`/meeting/${session.id}`)
   }
 
   return (
-    <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12">
+    <main className="min-h-screen px-6 pt-16 pb-10">
+      <div className="mx-auto w-full max-w-300">
 
-      {/* Page Title and Navigation Header */}
-      <div className="mb-8">
-
-        <Link
-          to="/dashboard"
-          className="flex items-center text-sm gap-1 mb-4 text-slate-500 hover:text-slate-900 transition-colors"
+        {/* Back to dashboard */}
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="mb-8 flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-600"
         >
-          <ArrowLeftIcon size={14} />
+          <ArrowLeft size={16} />
           Go to Dashboard
-        </Link>
+        </button>
 
-        <div>
-          <h1 className="text-3xl font-medium tracking-tight text-slate-900">
+        {/* Page heading */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
             Meeting sessions.
           </h1>
 
-          <p className="text-sm text-slate-500 mt-1">
-            Review your past and active meeting history,
-            participant logs, and chat transcripts.
+          <p className="mt-2 max-w-2xl text-sm text-slate-500 md:text-base">
+            Review your past and active meeting history, participant logs,
+            and chat transcripts.
           </p>
         </div>
 
+        {/* Sessions */}
+        {sessions.length === 0 ? (
+          <EmptySessions />
+        ) : (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {sessions.map((session) => (
+              <div
+                key={session.id}
+                className="rounded-3xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                {/* Top row */}
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <span className="rounded-lg bg-slate-100 px-3 py-2 font-mono text-xs text-slate-500">
+                    ID: {session.id}
+                  </span>
+
+                  {session.status === 'active' ? (
+                    <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-600">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Active
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
+                      <span className="h-2 w-2 rounded-full bg-slate-400" />
+                      Ended
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h2 className="min-h-14 text-xl font-semibold leading-7 text-slate-800">
+                  {session.title}
+                </h2>
+
+                {/* Date */}
+                <div className="mt-5 flex items-center gap-2 text-sm text-slate-500">
+                  <CalendarDays size={17} />
+                  <span>{session.date}</span>
+                </div>
+
+                {/* Stats */}
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                    <Users size={17} />
+                    <span>{session.participants} Participants</span>
+                  </div>
+
+                  <div className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                    <MessageSquare size={17} />
+                    <span>{session.messages} Messages</span>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="mt-5 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetails(session)}
+                    className={`flex-1 rounded-full px-4 py-3 text-sm font-medium transition ${
+                      session.status === 'active'
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    View Details
+                  </button>
+
+                  {session.status === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => handleRejoin(session)}
+                      className="flex-1 rounded-full bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
+                    >
+                      Re-join
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Sessions */}
-      {sessions.length === 0 ? (
-
-        <EmptySessions />
-
-      ) : (
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-
-          {sessions.map((session) => (
-
-            <SessionCard
-              key={session.id}
-              session={session}
-              onOpenDetails={openSessionDetails}
-              onRejoin={(meetingId) =>
-                handleRejoin(meetingId)
-              }
-            />
-
-          ))}
-
-        </div>
-
-      )}
-
-      {/* Session Detail Modal */}
+      {/* Session detail modal */}
       {selectedSession && (
-
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-          onClick={closeSessionDetails}
-        >
-
-          <div
-            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-6">
-
-              <div>
-                <p className="text-xs text-slate-400 font-mono">
-                  ID: {selectedSession.meetingId}
-                </p>
-
-                <h2 className="text-xl font-semibold text-slate-800 mt-1">
-                  Session Details
-                </h2>
-              </div>
-
-              <button
-                onClick={closeSessionDetails}
-                className="rounded-full p-2 hover:bg-slate-100 transition"
-              >
-                <XIcon className="w-5 h-5 text-slate-500" />
-              </button>
-
-            </div>
-
-            {/* Session Information */}
-            <div className="space-y-4">
-
-              <div>
-                <p className="text-xs text-slate-400">
-                  Meeting
-                </p>
-
-                <p className="text-base font-medium text-slate-800 mt-1">
-                  {selectedSession.title}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Date
-                  </p>
-
-                  <p className="text-sm font-medium text-slate-700 mt-1">
-                    {selectedSession.date}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Time
-                  </p>
-
-                  <p className="text-sm font-medium text-slate-700 mt-1">
-                    {selectedSession.time}
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Participants
-                  </p>
-
-                  <p className="text-sm font-medium text-slate-700 mt-1">
-                    {selectedSession.participants}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Messages
-                  </p>
-
-                  <p className="text-sm font-medium text-slate-700 mt-1">
-                    {selectedSession.messages}
-                  </p>
-                </div>
-
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-400">
-                  Status
-                </p>
-
-                <p
-                  className={`text-sm font-medium mt-1 ${
-                    selectedSession.status === 'ended'
-                      ? 'text-slate-500'
-                      : 'text-emerald-500'
-                  }`}
-                >
-                  {selectedSession.status === 'ended'
-                    ? 'Ended'
-                    : 'Active'}
-                </p>
-              </div>
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-3 mt-7">
-
-              <button
-                onClick={closeSessionDetails}
-                className="px-5 py-2.5 rounded-full border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Close
-              </button>
-
-              {selectedSession.status !== 'ended' && (
-                <button
-                  onClick={() =>
-                    handleRejoin(
-                      selectedSession.meetingId
-                    )
-                  }
-                  className="px-5 py-2.5 rounded-full bg-primary hover:bg-primary-hover text-white text-sm font-medium transition"
-                >
-                  Rejoin Meeting
-                </button>
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
+        <SessionDetailModal
+          session={selectedSession}
+          onClose={handleCloseDetails}
+        />
       )}
-
     </main>
   )
 }
