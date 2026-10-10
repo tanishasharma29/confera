@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import { initDB } from "./config/db.js"; 
 import { clerkMiddleware } from '@clerk/express'
 import { handleClerkWebhook } from "./controllers/webhookController.js";
-
+import meetingRouter from './routes/meetingRoutes.js'
 
 const app = express();
 
@@ -21,6 +21,8 @@ app.use(express.json())
 app.use(clerkMiddleware())
 
 app.get("/", (req, res) =>res.send("API is Live!"))
+app.use("/api/meetings", meetingRouter)
+
  const PORT = process.env.PORT || 3000;
 
  app.listen(PORT, () => {
