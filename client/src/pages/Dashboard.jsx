@@ -20,7 +20,7 @@ import {
   Activity,
   Radio,
 } from 'lucide-react'
-import api from '../config/api'
+import api, { setClerkUserId } from '../config/api'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -84,9 +84,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
+      if (user?.id) {
+        setClerkUserId(user.id)
+      }
       fetchDashboardData()
     }
-  }, [isLoaded, isSignedIn])
+  }, [isLoaded, isSignedIn, user?.id])
 
   const userName =
     user?.fullName ||

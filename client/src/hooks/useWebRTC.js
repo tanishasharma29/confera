@@ -2,12 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { socket } from '../config/socket'
 
-const ICE_SERVERS = {
-  iceServers: [
+const getIceServers = () => {
+  const stunServers = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-  ],
+  ]
+
+  const turnUrls = import.meta.env.VITE_TURN_URLS
+  const turnUsername = import.meta.env.VITE_TURN_USERNAME
+  const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL
+
+  if (turnUrls) {
+    const urls = turnUrls.split(',').map((u) => u.trim()).filter(Boolean)
+    const turnConfig = { urls }
+    if (turnUsername) turnConfig.username = turnUsername
+    if (turnCredential) turnConfig.credential = turnCredential
+    return { iceServers: [...stunServers, turnConfig] }
+  }
+
+  return { iceServers: stunServers }
 }
 
 const useWebRTC = (
@@ -101,15 +115,24 @@ const useWebRTC = (
       return peersRef.current.get(targetSocketId)
     }
 
-    const pc = new RTCPeerConnection(ICE_SERVERS)
+    const pc = new RTCPeerConnection(getIceServers())
     peersRef.current.set(targetSocketId, pc)
 
     // Add local tracks to peer connection
-    const currentStream = screenStreamRef.current || localStreamRef.current
-    if (currentStream) {
-      currentStream.getTracks().forEach((track) => {
-        pc.addTrack(track, currentStream)
-      })
+    // Ensure microphone audio track is ALWAYS added from localStreamRef, even when screenStream is active!
+    const activeVideoTrack = screenStreamRef.current?.getVideoTracks()[0] || localStreamRef.current?.getVideoTracks()[0]
+    const activeAudioTrack = localStreamRef.current?.getAudioTracks()[0]
+    const screenAudioTrack = screenStreamRef.current?.getAudioTracks()[0]
+
+    if (activeAudioTrack && localStreamRef.current) {
+      pc.addTrack(activeAudioTrack, localStreamRef.current)
+    }
+    if (screenAudioTrack && screenStreamRef.current) {
+      pc.addTrack(screenAudioTrack, screenStreamRef.current)
+    }
+    if (activeVideoTrack) {
+      const parentStream = screenStreamRef.current?.getVideoTracks()[0] ? screenStreamRef.current : localStreamRef.current
+      pc.addTrack(activeVideoTrack, parentStream)
     }
 
     // ICE Candidate handler
@@ -489,6 +512,8 @@ const useWebRTC = (
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: { cursor: 'always' },
           audio: false,
+          selfBrowserSurface: 'exclude',
+          preferCurrentTab: false,
         })
 
         screenStreamRef.current = displayStream
@@ -742,8 +767,8 @@ const useWebRTC = (
     // 8. Meeting Ended / Error
     const handleMeetingEnded = ({ message }) => {
       toast(message || 'The meeting has ended', { icon: 'ℹ️' })
-      if (onMeetingEnded) {
-        onMeetingEnded()
+      if (onMeetingEndedRef.current) {
+        onMeetingEndedRef.current()
       }
     }
 

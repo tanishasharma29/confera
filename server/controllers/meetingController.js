@@ -91,6 +91,8 @@ export const getMeeting = async (req, res) => {
       return res.status(400).json({ error: "Meeting ID is required" });
     }
 
+    const cleanId = meetingId.trim();
+
     const meetings = await sql`
       SELECT
         m.*,
@@ -99,40 +101,28 @@ export const getMeeting = async (req, res) => {
         u.email AS host_email
       FROM meetings m
       JOIN users u ON m.host_id = u.id
-      WHERE m.meeting_id = ${meetingId.trim()}
+      WHERE m.meeting_id = ${cleanId}
     `;
 
     if (meetings.length === 0) {
-      // Auto-provision room on-demand so direct rooms and invite links always open seamlessly
-      const cleanId = meetingId.trim();
-      const hostId = req.user?.id || "user_confera_host";
-      const hostRecord = await ensureUserInDatabase(hostId, { name: req.user?.name || "Host" });
-
-      const [newMeeting] = await sql`
-        INSERT INTO meetings (meeting_id, title, host_id, status)
-        VALUES (${cleanId}, 'Instant Meeting', ${hostId}, 'active')
-        ON CONFLICT (meeting_id) DO UPDATE SET status = 'active'
-        RETURNING id, meeting_id, title, host_id, status, created_at, ended_at
-      `;
-
-      return res.json({
-        meeting: {
-          id: newMeeting.id,
-          meeting_id: newMeeting.meeting_id,
-          title: newMeeting.title,
-          status: newMeeting.status,
-          created_At: newMeeting.created_at,
-          ended_At: newMeeting.ended_at,
-          host: {
-            id: hostId,
-            name: hostRecord?.name || req.user?.name || "Host",
-            email: hostRecord?.email || `${hostId}@user.confera.app`,
-          },
-        },
-      });
+      return res.status(404).json({ error: "Meeting not found" });
     }
 
     const meeting = meetings[0];
+
+    if (meeting.status === "ended") {
+      return res.status(410).json({
+        error: "This meeting has already ended",
+        meeting: {
+          id: meeting.id,
+          meeting_id: meeting.meeting_id,
+          title: meeting.title,
+          status: "ended",
+          created_At: meeting.created_at,
+          ended_At: meeting.ended_at,
+        },
+      });
+    }
 
     res.json({
       meeting: {
@@ -374,11 +364,31 @@ export const getMeetingStats = async (req, res) => {
 export const updatePlan = async (req, res) => {
   try {
     const userId = req.user.id;
-    const plan = req.body?.plan === "free" ? "free" : "premium";
-    await sql`
-      UPDATE users SET plan = ${plan}, updated_at = NOW() WHERE id = ${userId}
-    `;
-    res.json({ success: true, plan });
+    const requestedPlan = req.body?.plan;
+
+    if (requestedPlan === "free") {
+      await sql`
+        UPDATE users SET plan = 'free', updated_at = NOW() WHERE id = ${userId}
+      `;
+      return res.json({ success: true, plan: "free" });
+    }
+
+    if (requestedPlan === "premium") {
+      // In production with a configured payment gateway, require billing signature or admin verification
+      const isProd = process.env.NODE_ENV === "production";
+      if (isProd && process.env.STRIPE_WEBHOOK_SECRET && !req.user?.isAdmin) {
+        return res.status(403).json({
+          error: "Plan upgrades must be processed through the verified payment gateway webhook.",
+        });
+      }
+
+      await sql`
+        UPDATE users SET plan = 'premium', updated_at = NOW() WHERE id = ${userId}
+      `;
+      return res.json({ success: true, plan: "premium" });
+    }
+
+    return res.status(400).json({ error: "Invalid plan specified. Allowed values: 'free' or 'premium'" });
   } catch (error) {
     console.error("updatePlan failed:", error);
     res.status(500).json({ error: "Failed to update plan" });
@@ -778,9 +788,17 @@ export const createActionItem = async (req, res) => {
 
     let dbMeetingId = null;
     if (meetingId && typeof meetingId === "string") {
-      const m = await sql`SELECT id FROM meetings WHERE meeting_id = ${meetingId.trim()}`;
+      const m = await sql`SELECT id, host_id FROM meetings WHERE meeting_id = ${meetingId.trim()}`;
       if (m.length > 0) {
         dbMeetingId = m[0].id;
+        if (m[0].host_id !== userId) {
+          const isParticipant = await sql`
+            SELECT id FROM meeting_participants WHERE meeting_id = ${dbMeetingId} AND user_id = ${userId} LIMIT 1
+          `;
+          if (isParticipant.length === 0) {
+            return res.status(403).json({ error: "Unauthorized: You are not a participant in this meeting" });
+          }
+        }
       }
     }
 
@@ -848,17 +866,21 @@ export const deleteActionItem = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Verify creator ownership
+    // Verify creator or meeting host ownership
     const existing = await sql`
-      SELECT id, created_by FROM action_items WHERE id = ${id}
+      SELECT a.id, a.created_by, m.host_id
+      FROM action_items a
+      LEFT JOIN meetings m ON a.meeting_id = m.id
+      WHERE a.id = ${id}
     `;
 
     if (existing.length === 0) {
       return res.status(404).json({ error: "Action item not found" });
     }
 
-    if (existing[0].created_by !== userId) {
-      return res.status(403).json({ error: "Unauthorized: Only the task creator can delete this action item" });
+    const item = existing[0];
+    if (item.created_by !== userId && item.host_id !== userId) {
+      return res.status(403).json({ error: "Unauthorized: Only the task creator or meeting host can delete this action item" });
     }
 
     await sql`DELETE FROM action_items WHERE id = ${id}`;

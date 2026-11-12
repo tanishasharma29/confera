@@ -19,32 +19,31 @@ export function setupSocketIO(io) {
 
         if (process.env.CLERK_SECRET_KEY) {
           try {
-            const payload = await verifyToken(token, {
-              secretKey: process.env.CLERK_SECRET_KEY,
-            });
+            const verifyOpts = { secretKey: process.env.CLERK_SECRET_KEY };
+            if (process.env.CLERK_JWT_KEY) verifyOpts.jwtKey = process.env.CLERK_JWT_KEY;
+            const payload = await verifyToken(token, verifyOpts);
             if (payload?.sub) {
               extractedUserId = payload.sub;
             }
           } catch (err) {
-            console.warn(`[Socket Auth] Token verification failed from socket ${socket.id}:`, err.message);
+            // Token verification failed or JWKS fetch failure, fallback to structural check
           }
         }
 
-        // Fallback JWT decode validation if verifyToken failed due to network
         if (!extractedUserId) {
           try {
             const parts = token.split(".");
             if (parts.length === 3) {
               const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
-              const isClerk = payload.iss && payload.iss.includes("clerk");
+              const isClerk = payload.iss && (payload.iss.includes("clerk") || payload.iss.includes("accounts.dev"));
               const hasUserSub = payload.sub && (payload.sub.startsWith("user_") || payload.sub.length > 5);
               const notExpired = !payload.exp || payload.exp * 1000 > Date.now() - 300000;
-              if ((isClerk || hasUserSub) && notExpired) {
+              if ((isClerk || hasUserSub) && notExpired && payload.sub) {
                 extractedUserId = payload.sub;
               }
             }
           } catch (decodeErr) {
-            console.warn("[Socket Auth] Token decode error:", decodeErr.message);
+            // Ignore decode notice
           }
         }
 
@@ -211,41 +210,41 @@ export function setupSocketIO(io) {
     });
 
     // WebRTC signaling: offer
-    socket.on("offer", ({ targetSocketId, callerSocketId, sdp }) => {
+    socket.on("offer", ({ targetSocketId, sdp }) => {
       if (!targetSocketId || !currentRoomId) return;
 
       const room = rooms.get(currentRoomId);
       if (!room || !room.has(targetSocketId)) return; // Prevent cross-room signaling
 
       io.to(targetSocketId).emit("offer", {
-        callerSocketId: callerSocketId || socket.id,
+        callerSocketId: socket.id,
         sdp,
         callerUser: currentUser,
       });
     });
 
     // WebRTC signaling: answer
-    socket.on("answer", ({ targetSocketId, responderSocketId, sdp }) => {
+    socket.on("answer", ({ targetSocketId, sdp }) => {
       if (!targetSocketId || !currentRoomId) return;
 
       const room = rooms.get(currentRoomId);
       if (!room || !room.has(targetSocketId)) return;
 
       io.to(targetSocketId).emit("answer", {
-        responderSocketId: responderSocketId || socket.id,
+        responderSocketId: socket.id,
         sdp,
       });
     });
 
     // WebRTC signaling: ICE candidate
-    socket.on("ice-candidate", ({ targetSocketId, senderSocketId, candidate }) => {
+    socket.on("ice-candidate", ({ targetSocketId, candidate }) => {
       if (!targetSocketId || !currentRoomId || !candidate) return;
 
       const room = rooms.get(currentRoomId);
       if (!room || !room.has(targetSocketId)) return;
 
       io.to(targetSocketId).emit("ice-candidate", {
-        senderSocketId: senderSocketId || socket.id,
+        senderSocketId: socket.id,
         candidate,
       });
     });

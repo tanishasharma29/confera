@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import VideoTile from './VideoTile'
 import {
-  Copy,
   Users,
   Mic,
   MicOff,
@@ -15,7 +14,6 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 
 const VideoGrid = ({
   localStream,
@@ -25,7 +23,6 @@ const VideoGrid = ({
   videoEnabled,
   screenStream = null,
   isScreenSharing = false,
-  roomId,
   onToggleAudio,
   onToggleVideo,
   onToggleScreenShare,
@@ -39,11 +36,7 @@ const VideoGrid = ({
   const [showModeDropdown, setShowModeDropdown] = useState(false)
   const [volumeLevel, setVolumeLevel] = useState(85)
   const [isMutedOutput, setIsMutedOutput] = useState(false)
-
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success('Meeting link copied!')
-  }
+  const [showScreenPreview, setShowScreenPreview] = useState(false)
 
   // All participants list (Local user + remote users)
   const allParticipants = [
@@ -87,15 +80,65 @@ const VideoGrid = ({
       <div className="flex-1 min-h-0 w-full relative group rounded-3xl overflow-hidden bg-[#22201D] border border-[rgba(234,231,224,0.12)] shadow-2xl shadow-black/60">
         {/* Main Video Stream Container */}
         <div className="w-full h-full">
-          <VideoTile
-            stream={mainParticipant.stream}
-            name={mainParticipant.name}
-            isLocal={mainParticipant.isLocal}
-            audioEnabled={mainParticipant.audioEnabled}
-            videoEnabled={mainParticipant.videoEnabled}
-            isMain={true}
-            isScreenShare={mainParticipant.isScreenShare}
-          />
+          {isScreenSharing && mainParticipant.isScreenShare && mainParticipant.isLocal && !showScreenPreview ? (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center select-none bg-gradient-to-b from-[#22201D] to-[#171614] z-10">
+              <div className="relative mb-5">
+                <div className="w-20 h-20 rounded-3xl bg-[#42B8AD]/10 border border-[#42B8AD]/30 flex items-center justify-center text-[#42B8AD] shadow-xl shadow-[#42B8AD]/10">
+                  <Monitor size={36} className="animate-pulse" />
+                </div>
+                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#42B8AD] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-[#42B8AD]"></span>
+                </span>
+              </div>
+
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#EAE7E0] tracking-tight mb-2">
+                You are sharing your screen
+              </h3>
+              <p className="text-xs sm:text-sm text-[#BDBAB3] max-w-md leading-relaxed mb-6">
+                Your screen is visible to all participants. Switch to another application or tab to present to the room.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onToggleScreenShare}
+                  className="px-5 py-2.5 rounded-xl bg-[#E6534B] hover:bg-[#d0453d] text-white text-xs font-bold transition-all shadow-lg shadow-[#E6534B]/20 flex items-center gap-2 active:scale-95 cursor-pointer"
+                >
+                  <MonitorOff size={15} />
+                  <span>Stop presenting</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowScreenPreview(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#292724] hover:bg-[#322f2b] border border-[rgba(234,231,224,0.15)] text-xs font-semibold text-[#EAE7E0] transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Show screen mirror</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full relative">
+              <VideoTile
+                stream={mainParticipant.stream}
+                name={mainParticipant.name}
+                isLocal={mainParticipant.isLocal}
+                audioEnabled={mainParticipant.audioEnabled}
+                videoEnabled={mainParticipant.videoEnabled}
+                isMain={true}
+                isScreenShare={mainParticipant.isScreenShare}
+              />
+              {isScreenSharing && mainParticipant.isScreenShare && mainParticipant.isLocal && (
+                <button
+                  type="button"
+                  onClick={() => setShowScreenPreview(false)}
+                  className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full bg-[#171614]/80 hover:bg-[#171614] backdrop-blur-xl border border-[rgba(234,231,224,0.16)] text-xs text-[#BDBAB3] hover:text-[#EAE7E0] transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Hide mirror</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Top-Left In-Video Pill: Session Tag / Mode Dropdown */}
