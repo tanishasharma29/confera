@@ -8,7 +8,13 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import { neon } from '@neondatabase/serverless';
 
-const dbUrl = process.env.DATABASE_URL || "postgresql://unconfigured:unconfigured@localhost:5432/confera";
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction && (!process.env.DATABASE_URL || !process.env.DATABASE_URL.trim())) {
+  throw new Error("[Database] FATAL: DATABASE_URL environment variable is required in production. Fallback to unconfigured localhost database is blocked in production.");
+}
+
+const dbUrl = process.env.DATABASE_URL?.trim() || "postgresql://unconfigured:unconfigured@localhost:5432/confera";
 if (!process.env.DATABASE_URL) {
   console.warn("[Database] Warning: DATABASE_URL is not set in environment variables.");
 }

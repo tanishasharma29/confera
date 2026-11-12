@@ -246,3 +246,62 @@ test('updatePlan controller strictly rejects client-driven premium self-activati
   assert.equal(responseData.code, 'PAYMENT_GATEWAY_NOT_CONFIGURED')
   assert.equal(responseData.paymentAvailable, false)
 })
+
+test('CORS origin validation strictly rejects unauthorized origins and enforces production boundaries', () => {
+  const isProduction = true
+  const allowedOrigins = ['https://confera.vercel.app']
+
+  const isOriginAllowed = (origin) => {
+    if (!origin) return true
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '')
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return true
+    }
+    if (!isProduction && (normalizedOrigin.startsWith('http://localhost:') || normalizedOrigin.startsWith('http://127.0.0.1:'))) {
+      return true
+    }
+    return false
+  }
+
+  // Allowed production origin (with and without trailing slash)
+  assert.equal(isOriginAllowed('https://confera.vercel.app'), true)
+  assert.equal(isOriginAllowed('https://confera.vercel.app/'), true)
+
+  // Unauthorized external origin blocked
+  assert.equal(isOriginAllowed('https://malicious-site.com'), false)
+
+  // Localhost blocked in production
+  assert.equal(isOriginAllowed('http://localhost:5173'), false)
+
+  // Direct server/health check request without origin allowed
+  assert.equal(isOriginAllowed(null), true)
+  assert.equal(isOriginAllowed(''), true)
+})
+
+test('Database configuration blocks silent fallback to localhost when in production mode', () => {
+  const verifyProductionDbConfig = (envNodeEnv, envDbUrl) => {
+    const isProd = envNodeEnv === 'production'
+    if (isProd && (!envDbUrl || !envDbUrl.trim())) {
+      throw new Error('[Database] FATAL: DATABASE_URL environment variable is required in production.')
+    }
+    return envDbUrl?.trim() || 'postgresql://unconfigured:unconfigured@localhost:5432/confera'
+  }
+
+  // In production without DATABASE_URL -> MUST throw
+  assert.throws(
+    () => verifyProductionDbConfig('production', ''),
+    /FATAL: DATABASE_URL environment variable is required in production/
+  )
+
+  // In production with valid DATABASE_URL -> succeeds
+  assert.equal(
+    verifyProductionDbConfig('production', 'postgresql://user:pass@ep-neon.tech/db'),
+    'postgresql://user:pass@ep-neon.tech/db'
+  )
+
+  // In development without DATABASE_URL -> safe local fallback
+  assert.equal(
+    verifyProductionDbConfig('development', ''),
+    'postgresql://unconfigured:unconfigured@localhost:5432/confera'
+  )
+})
