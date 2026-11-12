@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { Sparkles, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/react'
 import toast from 'react-hot-toast'
 import api from '../config/api'
+import CheckoutModal from '../components/pricing/CheckoutModal'
 
 const Pricing = () => {
   const navigate = useNavigate()
+  const { user } = useUser()
+
   const [currentPlan, setCurrentPlan] = useState('free')
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -25,24 +30,12 @@ const Pricing = () => {
 
   const isPro = currentPlan === 'premium' || currentPlan === 'pro'
 
-  const handleUpgrade = async () => {
+  const handleUpgradeClick = () => {
     if (isPro) {
-      toast.success('You are currently on Confera Pro!')
+      toast.success('You are already enjoying Confera Pro benefits!')
       return
     }
-
-    try {
-      setIsUpdating(true)
-      const res = await api.post('/api/meetings/plan', { plan: 'premium' })
-      if (res.data?.success) {
-        setCurrentPlan('premium')
-        toast.success('Successfully upgraded to Confera Pro! Enjoy 100 participants & unlimited calls.')
-      }
-    } catch {
-      toast.error('Could not update plan. Please try again.')
-    } finally {
-      setIsUpdating(false)
-    }
+    setIsCheckoutOpen(true)
   }
 
   const handleDowngrade = async () => {
@@ -63,6 +56,10 @@ const Pricing = () => {
     } finally {
       setIsUpdating(false)
     }
+  }
+
+  const handlePaymentSuccess = (newPlan) => {
+    setCurrentPlan(newPlan || 'premium')
   }
 
   return (
@@ -128,7 +125,7 @@ const Pricing = () => {
               type="button"
               disabled={isUpdating}
               onClick={handleDowngrade}
-              className={`w-full py-3 rounded-xl text-xs font-semibold border transition-all relative z-10 cursor-pointer ${
+              className={`w-full py-3.5 rounded-xl text-xs font-semibold border transition-all relative z-10 cursor-pointer ${
                 !isPro
                   ? 'bg-[#292724] text-[#EAE7E0] border-[rgba(234,231,224,0.14)] cursor-default'
                   : 'bg-[#22201D] hover:bg-[#292724] text-[#BDBAB3] hover:text-[#EAE7E0] border-[rgba(234,231,224,0.1)]'
@@ -181,8 +178,8 @@ const Pricing = () => {
             <button
               type="button"
               disabled={isUpdating}
-              onClick={handleUpgrade}
-              className={`w-full py-3 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer shadow-lg active:scale-[0.99] ${
+              onClick={handleUpgradeClick}
+              className={`w-full py-3.5 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer shadow-lg active:scale-[0.99] ${
                 isPro
                   ? 'bg-[#292724] text-[#42B8AD] border border-[#42B8AD]/40 cursor-default'
                   : 'bg-[#42B8AD] hover:bg-[#399e94] text-[#171614] shadow-[#42B8AD]/20'
@@ -197,6 +194,15 @@ const Pricing = () => {
           </div>
         </div>
       </div>
+
+      {/* Checkout & Payment Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        userName={user?.fullName || user?.firstName || 'Tanisha Sharma'}
+        userEmail={user?.primaryEmailAddress?.emailAddress || 'sharmatanisha94724@gmail.com'}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   )
 }
