@@ -99,10 +99,10 @@ test('Health and API routes respond correctly through Express app stack', async 
   assert.equal(root.body.status, 'ok')
   assert.equal(root.body.app, 'Confera API')
 
-  // 2. Health check route
+  // 2. Health check route: checks actual DB connectivity and returns appropriate status
   const health = await mockRequest(app, { method: 'GET', url: '/health' })
   assert.ok(health.status === 200 || health.status === 503)
-  assert.ok(health.body.status === 'healthy' || health.body.status === 'degraded')
+  assert.ok(health.body.status === 'healthy' || health.body.status === 'unhealthy')
   assert.ok(health.body.timestamp)
 
   // 3. Security headers
@@ -113,4 +113,13 @@ test('Health and API routes respond correctly through Express app stack', async 
   const protectedStats = await mockRequest(app, { method: 'GET', url: '/api/meetings/stats' })
   assert.equal(protectedStats.status, 401)
   assert.equal(protectedStats.body.error, 'Not Authorized: Valid authentication required')
+
+  // 5. Forged x-user-id header is strictly rejected with 401
+  const forgedHeaderRes = await mockRequest(app, {
+    method: 'GET',
+    url: '/api/meetings/stats',
+    headers: { 'x-user-id': 'user_attacker_999' },
+  })
+  assert.equal(forgedHeaderRes.status, 401)
+  assert.equal(forgedHeaderRes.body.error, 'Not Authorized: Valid authentication required')
 })

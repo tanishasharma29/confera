@@ -159,3 +159,90 @@ test('Socket room authorization ensures users can only message their current roo
   assert.equal(canSendMessage('confera-room-1'), true)
   assert.equal(canSendMessage('confera-room-2'), false)
 })
+
+test('protect middleware strictly rejects forged x-user-id header without verified token', async () => {
+  const req = {
+    headers: {
+      'x-user-id': 'user_forged_admin_123',
+    },
+    cookies: {},
+  }
+
+  let statusCode = null
+  let responseBody = null
+  const res = {
+    status(code) {
+      statusCode = code
+      return this
+    },
+    json(body) {
+      responseBody = body
+      return this
+    },
+  }
+
+  let nextCalled = false
+  await protect(req, res, () => {
+    nextCalled = true
+  })
+
+  assert.equal(statusCode, 401)
+  assert.equal(responseBody.error, 'Not Authorized: Valid authentication required')
+  assert.equal(nextCalled, false)
+})
+
+test('protect middleware strictly rejects unverified or tampered Bearer tokens', async () => {
+  const req = {
+    headers: {
+      authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature',
+    },
+    cookies: {},
+  }
+
+  let statusCode = null
+  let responseBody = null
+  const res = {
+    status(code) {
+      statusCode = code
+      return this
+    },
+    json(body) {
+      responseBody = body
+      return this
+    },
+  }
+
+  let nextCalled = false
+  await protect(req, res, () => {
+    nextCalled = true
+  })
+
+  assert.equal(statusCode, 401)
+  assert.equal(responseBody.error, 'Not Authorized: Valid authentication required')
+  assert.equal(nextCalled, false)
+})
+
+test('updatePlan controller strictly rejects client-driven premium self-activation', async () => {
+  const { updatePlan } = await import('../controllers/meetingController.js')
+  const req = {
+    user: { id: 'user_regular_customer' },
+    body: { plan: 'premium' },
+  }
+  let statusCode = 200
+  let responseData = null
+  const res = {
+    status(code) {
+      statusCode = code
+      return this
+    },
+    json(data) {
+      responseData = data
+      return this
+    },
+  }
+
+  await updatePlan(req, res)
+  assert.equal(statusCode, 501)
+  assert.equal(responseData.code, 'PAYMENT_GATEWAY_NOT_CONFIGURED')
+  assert.equal(responseData.paymentAvailable, false)
+})

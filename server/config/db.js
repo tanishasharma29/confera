@@ -150,7 +150,7 @@ export async function ensureUserInDatabase(userId, fallbackData = {}) {
 
     return created;
   } catch (err) {
-    console.error(`ensureUserInDatabase warning for ${userId}:`, err.message || err);
-    return { id: userId, plan: "free", name: fallbackData.name || "User" };
+    console.error(`[Database Error] ensureUserInDatabase failed for ${userId}:`, err.message || err);
+    throw new Error(`Database error while ensuring user record: ${err.message}`);
   }
 }

@@ -27,7 +27,7 @@ import {
   Video,
 } from 'lucide-react'
 
-import api, { setClerkUserId } from '../config/api'
+import api from '../config/api'
 import useWebRTC from '../hooks/useWebRTC'
 import useChat from '../hooks/useChat'
 
@@ -76,9 +76,6 @@ const MeetingRoom = () => {
     if (!meetingId) return
 
     let isMounted = true
-    if (user?.id) {
-      setClerkUserId(user.id)
-    }
     const fetchMeeting = async () => {
       try {
         const [meetingRes, actionsRes] = await Promise.allSettled([

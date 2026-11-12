@@ -14,61 +14,43 @@ export function setupSocketIO(io) {
           ? socket.handshake.headers.authorization.split(" ")[1]
           : null);
 
-      if (token) {
-        let extractedUserId = null;
-
-        if (process.env.CLERK_SECRET_KEY) {
-          try {
-            const verifyOpts = { secretKey: process.env.CLERK_SECRET_KEY };
-            if (process.env.CLERK_JWT_KEY) verifyOpts.jwtKey = process.env.CLERK_JWT_KEY;
-            const payload = await verifyToken(token, verifyOpts);
-            if (payload?.sub) {
-              extractedUserId = payload.sub;
-            }
-          } catch (err) {
-            // Token verification failed or JWKS fetch failure, fallback to structural check
-          }
-        }
-
-        if (!extractedUserId) {
-          try {
-            const parts = token.split(".");
-            if (parts.length === 3) {
-              const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
-              const isClerk = payload.iss && (payload.iss.includes("clerk") || payload.iss.includes("accounts.dev"));
-              const hasUserSub = payload.sub && (payload.sub.startsWith("user_") || payload.sub.length > 5);
-              const notExpired = !payload.exp || payload.exp * 1000 > Date.now() - 300000;
-              if ((isClerk || hasUserSub) && notExpired && payload.sub) {
-                extractedUserId = payload.sub;
-              }
-            }
-          } catch (decodeErr) {
-            // Ignore decode notice
-          }
-        }
-
-        if (extractedUserId) {
-          socket.userId = extractedUserId;
-          socket.isAuthenticated = true;
-
-          // Fetch or provision user in DB
-          const dbUser = await ensureUserInDatabase(socket.userId);
-          socket.userName = dbUser?.name || "Participant";
-          socket.userEmail = dbUser?.email || "";
-          socket.userPlan = dbUser?.plan || "free";
-        } else {
-          socket.userId = null;
-          socket.isAuthenticated = false;
-        }
-      } else {
-        socket.userId = null;
-        socket.isAuthenticated = false;
+      if (!token) {
+        return next(new Error("Authentication error: Missing token"));
       }
+
+      let extractedUserId = null;
+
+      if (process.env.CLERK_SECRET_KEY) {
+        try {
+          const verifyOpts = { secretKey: process.env.CLERK_SECRET_KEY };
+          if (process.env.CLERK_JWT_KEY) verifyOpts.jwtKey = process.env.CLERK_JWT_KEY;
+          const payload = await verifyToken(token, verifyOpts);
+          if (payload?.sub) {
+            extractedUserId = payload.sub;
+          }
+        } catch (err) {
+          console.warn(`[Socket Auth] Token verification failed from socket ${socket.id}:`, err.message);
+          return next(new Error("Authentication error: Invalid or unverifiable token"));
+        }
+      }
+
+      if (!extractedUserId) {
+        return next(new Error("Authentication error: Unauthorized connection"));
+      }
+
+      socket.userId = extractedUserId;
+      socket.isAuthenticated = true;
+
+      // Fetch or provision user in DB
+      const dbUser = await ensureUserInDatabase(socket.userId);
+      socket.userName = dbUser?.name || "Participant";
+      socket.userEmail = dbUser?.email || "";
+      socket.userPlan = dbUser?.plan || "free";
 
       next();
     } catch (err) {
       console.error("[Socket Middleware Error]:", err);
-      next();
+      next(new Error("Authentication error"));
     }
   });
 
@@ -85,6 +67,11 @@ export function setupSocketIO(io) {
         }
 
         const cleanRoomId = roomId.trim();
+
+        if (!socket.isAuthenticated || !socket.userId) {
+          socket.emit("meeting-ended", { message: "Unauthorized: Valid authentication required." });
+          return;
+        }
 
         // 1. Verify meeting status from the database
         const meetings = await sql`
@@ -113,14 +100,8 @@ export function setupSocketIO(io) {
           meeting.host_id.toString() === socket.userId.toString()
         );
 
-        // 3. Resolve participant display name securely
-        let displayName = "Participant";
-        if (socket.isAuthenticated && socket.userName) {
-          displayName = socket.userName;
-        } else if (clientUser?.name && typeof clientUser.name === "string") {
-          // Sanitize client-provided guest name
-          displayName = clientUser.name.trim().slice(0, 50) || "Guest";
-        }
+        // 3. Resolve participant display name securely from verified database identity
+        const displayName = socket.userName || "Participant";
 
         currentRoomId = cleanRoomId;
 

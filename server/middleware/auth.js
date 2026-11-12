@@ -2,11 +2,11 @@ import { getAuth, verifyToken } from "@clerk/express";
 import { ensureUserInDatabase } from "../config/db.js";
 
 /**
- * Express middleware to enforce authentication.
- * 1. Tries Clerk express getAuth()
- * 2. Tries cryptographic token verification (verifyToken)
- * 3. Graceful fallback for network/JWKS fetch errors (validates Clerk issuer, sub, and unexpired timestamp)
- * 4. Fallback for authenticated client header (x-user-id)
+ * Express middleware to enforce cryptographically verified Clerk authentication.
+ * 1. Checks Clerk authentication via getAuth(req) / req.auth()
+ * 2. Cryptographically verifies Bearer token via verifyToken() with CLERK_SECRET_KEY
+ * 3. Rejects missing, expired, invalid, or unverifiable tokens with HTTP 401.
+ * 4. NEVER trusts unverified client headers (x-user-id) or unverified JWT payloads.
  */
 export const protect = async (req, res, next) => {
   try {
@@ -19,22 +19,28 @@ export const protect = async (req, res, next) => {
         userId = auth.userId;
       }
     } catch {
-      // clerkMiddleware not attached to raw req or unauthenticated
+      // clerkMiddleware not attached to req or unauthenticated
     }
 
-    if (!userId && req.auth?.userId) {
-      userId = req.auth.userId;
+    if (!userId && typeof req.auth === "function") {
+      try {
+        const authObj = req.auth();
+        if (authObj?.userId) {
+          userId = authObj.userId;
+        }
+      } catch {
+        // ignore
+      }
     }
 
-    // 2. Token verification for Bearer header or __session cookie
-    const authHeader = req.headers.authorization;
-    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-    const cookieToken = req.cookies?.__session;
-    const token = bearerToken || cookieToken;
+    // 2. Cryptographic token verification for Bearer header or __session cookie
+    if (!userId) {
+      const authHeader = req.headers.authorization;
+      const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+      const cookieToken = req.cookies?.__session;
+      const token = bearerToken || cookieToken;
 
-    if (!userId && token) {
-      // Attempt cryptographic verification with secretKey
-      if (process.env.CLERK_SECRET_KEY) {
+      if (token && process.env.CLERK_SECRET_KEY) {
         try {
           const verifyOpts = { secretKey: process.env.CLERK_SECRET_KEY };
           if (process.env.CLERK_JWT_KEY) {
@@ -45,40 +51,12 @@ export const protect = async (req, res, next) => {
             userId = payload.sub;
           }
         } catch (tokenErr) {
-          // If verifyToken fails (e.g. network/JWKS fetch error in dev or timeout),
-          // fall through to structural token claim verification below
-        }
-      }
-
-      // If verifyToken failed due to network / JWKS fetch failure, validate Clerk JWT claims
-      if (!userId) {
-        try {
-          const parts = token.split(".");
-          if (parts.length === 3) {
-            const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
-            const isClerk = payload.iss && (payload.iss.includes("clerk") || payload.iss.includes("accounts.dev"));
-            const hasUserSub = payload.sub && (payload.sub.startsWith("user_") || payload.sub.length > 5);
-            const notExpired = !payload.exp || payload.exp * 1000 > Date.now() - 300000;
-
-            if ((isClerk || hasUserSub) && notExpired && payload.sub) {
-              userId = payload.sub;
-            }
-          }
-        } catch (decodeErr) {
-          console.warn("[Auth] Token decode notice:", decodeErr.message);
+          console.warn("[Auth] Cryptographic verification failed:", tokenErr.message);
         }
       }
     }
 
-    // 3. Fallback: check x-user-id header sent from authenticated client
-    if (!userId && req.headers["x-user-id"]) {
-      const headerUserId = String(req.headers["x-user-id"]).trim();
-      if (headerUserId.length >= 4) {
-        userId = headerUserId;
-      }
-    }
-
-    // If still no identity, reject with 401
+    // 3. Strict rejection: if no verified identity, reject with 401
     if (!userId) {
       return res.status(401).json({
         error: "Not Authorized: Valid authentication required",
