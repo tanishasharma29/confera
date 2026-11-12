@@ -86,9 +86,18 @@ const VideoTile = ({
           {!audioEnabled && !isScreenShare && (
             <span
               className="p-1 rounded-full bg-[#E6534B]/20 text-[#E6534B]"
-              title="Microphone muted"
+              title="Microphone is muted"
             >
               <MicOff size={11} />
+            </span>
+          )}
+
+          {!videoEnabled && !isScreenShare && (
+            <span
+              className="p-1 rounded-full bg-[#E6534B]/20 text-[#E6534B]"
+              title="Camera is turned off"
+            >
+              <VideoOff size={11} />
             </span>
           )}
         </div>

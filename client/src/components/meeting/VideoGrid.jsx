@@ -134,29 +134,30 @@ const VideoGrid = ({
           </div>
         </div>
 
-        {/* Top-Right In-Video: Coral Red End Meeting Button */}
+        {/* Top-Right In-Video: End / Leave Meeting Button (Clear Pill) */}
         {onEndMeeting && (
           <div className="absolute top-4 right-4 z-20">
             <button
               type="button"
               onClick={onEndMeeting}
-              className="w-11 h-11 rounded-full bg-[#E6534B] hover:bg-[#d84840] text-white flex items-center justify-center transition-all shadow-lg shadow-[#E6534B]/30 hover:scale-105 active:scale-95 cursor-pointer"
-              title={isHost ? 'End meeting for all' : 'Leave meeting'}
+              className="h-10 px-3.5 rounded-full bg-[#E6534B] hover:bg-[#d84840] text-white flex items-center gap-1.5 transition-all shadow-lg shadow-[#E6534B]/30 hover:scale-105 active:scale-95 cursor-pointer text-xs font-bold"
+              title={isHost ? 'End meeting for all participants' : 'Leave meeting'}
             >
-              <PhoneOff size={18} />
+              <PhoneOff size={15} />
+              <span className="hidden sm:inline">{isHost ? 'End Call' : 'Leave'}</span>
             </button>
           </div>
         )}
 
         {/* Bottom-Left In-Video: Floating Translucent Control Dock */}
-        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2">
-          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-[#171614]/85 backdrop-blur-2xl border border-[rgba(234,231,224,0.14)] shadow-2xl">
+        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 max-w-[calc(100%-70px)] sm:max-w-none">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-[#171614]/90 backdrop-blur-2xl border border-[rgba(234,231,224,0.16)] shadow-2xl overflow-x-auto no-scrollbar">
             {/* Participants Pill */}
             {onToggleParticipants && (
               <button
                 type="button"
                 onClick={onToggleParticipants}
-                className="h-9 px-3 rounded-full bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                className="h-9 px-3 rounded-full bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
                 title="View Participants"
               >
                 <Users size={14} className="text-[#42B8AD]" />
@@ -169,47 +170,59 @@ const VideoGrid = ({
               <button
                 type="button"
                 onClick={onToggleScreenShare}
-                className={`h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
                   isScreenSharing
-                    ? 'bg-[#42B8AD] text-[#171614] shadow-md shadow-[#42B8AD]/20 font-bold'
+                    ? 'bg-[#42B8AD] text-[#171614] shadow-md shadow-[#42B8AD]/30 font-bold'
                     : 'bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0]'
                 }`}
-                title="Share Screen"
+                title={isScreenSharing ? 'Stop screen sharing' : 'Share your screen'}
               >
-                {isScreenSharing ? <MonitorOff size={14} /> : <Monitor size={14} />}
+                {isScreenSharing ? (
+                  <MonitorOff size={15} className="text-[#171614]" />
+                ) : (
+                  <Monitor size={15} className="text-[#42B8AD]" />
+                )}
                 <span>{isScreenSharing ? 'Stop Share' : 'Share Screen'}</span>
               </button>
             )}
 
-            {/* Mic Toggle */}
+            {/* Mic Toggle (Microphone On / Off) */}
             {onToggleAudio && (
               <button
                 type="button"
                 onClick={onToggleAudio}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                className={`h-9 w-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   audioEnabled
-                    ? 'bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0]'
+                    ? 'bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.1)]'
                     : 'bg-[#E6534B] text-white shadow-md shadow-[#E6534B]/30'
                 }`}
-                title={audioEnabled ? 'Mute Microphone' : 'Unmute Microphone'}
+                title={audioEnabled ? 'Microphone is ON (click to mute)' : 'Microphone is MUTED (click to unmute)'}
               >
-                {audioEnabled ? <Mic size={15} /> : <MicOff size={15} />}
+                {audioEnabled ? (
+                  <Mic size={15} className="text-[#42B8AD]" />
+                ) : (
+                  <MicOff size={15} className="text-white" />
+                )}
               </button>
             )}
 
-            {/* Video Toggle */}
+            {/* Video Toggle (Camera On / Off) */}
             {onToggleVideo && (
               <button
                 type="button"
                 onClick={onToggleVideo}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                className={`h-9 w-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   videoEnabled
-                    ? 'bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0]'
+                    ? 'bg-[#22201D] hover:bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.1)]'
                     : 'bg-[#E6534B] text-white shadow-md shadow-[#E6534B]/30'
                 }`}
-                title={videoEnabled ? 'Turn off camera' : 'Turn on camera'}
+                title={videoEnabled ? 'Camera is ON (click to turn off)' : 'Camera is OFF (click to turn on)'}
               >
-                {videoEnabled ? <Video size={15} /> : <VideoOff size={15} />}
+                {videoEnabled ? (
+                  <Video size={15} className="text-[#42B8AD]" />
+                ) : (
+                  <VideoOff size={15} className="text-white" />
+                )}
               </button>
             )}
 
@@ -218,7 +231,7 @@ const VideoGrid = ({
               <button
                 type="button"
                 onClick={onOpenSettings}
-                className="w-9 h-9 rounded-full bg-[#22201D] hover:bg-[#292724] text-[#BDBAB3] hover:text-[#EAE7E0] flex items-center justify-center transition-colors cursor-pointer"
+                className="h-9 w-9 rounded-full bg-[#22201D] hover:bg-[#292724] text-[#BDBAB3] hover:text-[#EAE7E0] flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Audio & Video Settings"
               >
                 <Settings size={15} />

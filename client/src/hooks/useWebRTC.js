@@ -40,6 +40,16 @@ const useWebRTC = (
   const audioEnabledRef = useRef(true)
   const videoEnabledRef = useRef(true)
 
+  const userRef = useRef(user)
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
+
+  const onMeetingEndedRef = useRef(onMeetingEnded)
+  useEffect(() => {
+    onMeetingEndedRef.current = onMeetingEnded
+  }, [onMeetingEnded])
+
   useEffect(() => {
     audioEnabledRef.current = audioEnabled
   }, [audioEnabled])
@@ -166,6 +176,11 @@ const useWebRTC = (
    * Initialize local camera and microphone
    */
   const initializeLocalStream = useCallback(async (audioDeviceId = null, videoDeviceId = null) => {
+    // If stream is already active and no device change was requested, keep existing stream
+    if (localStreamRef.current && !audioDeviceId && !videoDeviceId) {
+      return localStreamRef.current
+    }
+
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         toast.error('Camera and microphone are not supported in this browser.')
@@ -585,8 +600,8 @@ const useWebRTC = (
       socket.emit('joinRoom', {
         roomId,
         user: {
-          id: user?.id || null,
-          name: user?.fullName || user?.firstName || user?.name || 'Participant',
+          id: userRef.current?.id || null,
+          name: userRef.current?.fullName || userRef.current?.firstName || userRef.current?.name || 'Participant',
         },
         audioEnabled: audioEnabledRef.current,
         videoEnabled: videoEnabledRef.current,
@@ -742,8 +757,8 @@ const useWebRTC = (
       socket.emit('joinRoom', {
         roomId,
         user: {
-          id: user?.id || null,
-          name: user?.fullName || user?.firstName || user?.name || 'Participant',
+          id: userRef.current?.id || null,
+          name: userRef.current?.fullName || userRef.current?.firstName || userRef.current?.name || 'Participant',
         },
         audioEnabled: audioEnabledRef.current,
         videoEnabled: videoEnabledRef.current,
@@ -797,18 +812,7 @@ const useWebRTC = (
 
       socket.disconnect()
     }
-  }, [
-    enabled,
-    roomId,
-    user?.id,
-    user?.fullName,
-    user?.firstName,
-    user?.name,
-    initializeLocalStream,
-    createPeerConnection,
-    drainCandidateQueue,
-    onMeetingEnded,
-  ])
+  }, [enabled, roomId])
 
   return {
     localStream,

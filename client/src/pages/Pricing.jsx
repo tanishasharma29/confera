@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { PricingTable } from '@clerk/react'
 import { Sparkles, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import api from '../config/api'
 
 const Pricing = () => {
   const navigate = useNavigate()
   const [currentPlan, setCurrentPlan] = useState('free')
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -21,6 +22,48 @@ const Pricing = () => {
     }
     fetchPlan()
   }, [])
+
+  const isPro = currentPlan === 'premium' || currentPlan === 'pro'
+
+  const handleUpgrade = async () => {
+    if (isPro) {
+      toast.success('You are currently on Confera Pro!')
+      return
+    }
+
+    try {
+      setIsUpdating(true)
+      const res = await api.post('/api/meetings/plan', { plan: 'premium' })
+      if (res.data?.success) {
+        setCurrentPlan('premium')
+        toast.success('Successfully upgraded to Confera Pro! Enjoy 100 participants & unlimited calls.')
+      }
+    } catch {
+      toast.error('Could not update plan. Please try again.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDowngrade = async () => {
+    if (!isPro) {
+      navigate('/dashboard')
+      return
+    }
+
+    try {
+      setIsUpdating(true)
+      const res = await api.post('/api/meetings/plan', { plan: 'free' })
+      if (res.data?.success) {
+        setCurrentPlan('free')
+        toast.success('Switched to Free plan.')
+      }
+    } catch {
+      toast.error('Could not update plan.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
     <div className="relative min-h-full">
@@ -50,7 +93,7 @@ const Pricing = () => {
         {/* Pricing Comparison Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
           {/* Free Plan */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-pricing-free flex flex-col justify-between space-y-6 overflow-hidden">
+          <div className="p-6 sm:p-8 rounded-3xl bg-pricing-free flex flex-col justify-between space-y-6 overflow-hidden border border-[rgba(234,231,224,0.1)] shadow-xl">
             <div className="space-y-4 relative z-10">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#77736C]">
@@ -83,21 +126,22 @@ const Pricing = () => {
 
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              disabled={isUpdating}
+              onClick={handleDowngrade}
               className={`w-full py-3 rounded-xl text-xs font-semibold border transition-all relative z-10 cursor-pointer ${
-                currentPlan === 'free'
-                  ? 'bg-[#292724] text-[#EAE7E0] border-[rgba(234,231,224,0.12)]'
-                  : 'bg-[#22201D] text-[#77736C] border-transparent'
+                !isPro
+                  ? 'bg-[#292724] text-[#EAE7E0] border-[rgba(234,231,224,0.14)] cursor-default'
+                  : 'bg-[#22201D] hover:bg-[#292724] text-[#BDBAB3] hover:text-[#EAE7E0] border-[rgba(234,231,224,0.1)]'
               }`}
             >
-              {currentPlan === 'free' ? 'Current Plan' : 'Downgrade to Free'}
+              {!isPro ? 'Current Plan (Active)' : 'Downgrade to Free'}
             </button>
           </div>
 
-          {/* Premium Plan */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-pricing-pro flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#42B8AD]/12 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute top-4 right-4 relative z-10">
+          {/* Pro / Premium Plan */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-pricing-pro flex flex-col justify-between space-y-6 relative overflow-hidden border border-[#42B8AD]/30 shadow-2xl">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#42B8AD]/15 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-4 right-4 z-10">
               <span className="px-3 py-1 rounded-full bg-[#42B8AD]/15 text-[#42B8AD] border border-[#42B8AD]/30 text-[10px] font-bold uppercase tracking-wider">
                 Recommended
               </span>
@@ -134,9 +178,22 @@ const Pricing = () => {
               </ul>
             </div>
 
-            <div className="w-full relative z-10">
-              <PricingTable />
-            </div>
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={handleUpgrade}
+              className={`w-full py-3 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer shadow-lg active:scale-[0.99] ${
+                isPro
+                  ? 'bg-[#292724] text-[#42B8AD] border border-[#42B8AD]/40 cursor-default'
+                  : 'bg-[#42B8AD] hover:bg-[#399e94] text-[#171614] shadow-[#42B8AD]/20'
+              }`}
+            >
+              {isUpdating
+                ? 'Updating Plan...'
+                : isPro
+                ? 'Current Plan (Active)'
+                : 'Upgrade to Pro'}
+            </button>
           </div>
         </div>
       </div>

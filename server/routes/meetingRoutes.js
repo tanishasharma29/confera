@@ -5,6 +5,7 @@ import {
   createMeeting,
   getMeeting,
   getMeetingStats,
+  updatePlan,
   getSessionDetails,
   getUserSessions,
   getMeetingMemories,
@@ -35,6 +36,7 @@ const aiMemoryLimiter = rateLimit({
 // Meetings Lifecycle
 meetingRouter.post("/", protect, createMeetingLimiter, createMeeting);
 meetingRouter.get("/stats", protect, getMeetingStats);
+meetingRouter.post("/plan", protect, updatePlan);
 meetingRouter.get("/sessions", protect, getUserSessions);
 meetingRouter.get("/sessions/:id", protect, getSessionDetails);
 

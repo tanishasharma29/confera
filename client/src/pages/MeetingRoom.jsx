@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useUser, UserButton } from '@clerk/react'
 import toast from 'react-hot-toast'
@@ -67,7 +67,7 @@ const MeetingRoom = () => {
   const chatScrollRef = useRef(null)
 
   // Real user data from Clerk
-  const userData = {
+  const userData = useMemo(() => ({
     id: user?.id,
     name:
       user?.fullName ||
@@ -75,7 +75,7 @@ const MeetingRoom = () => {
       user?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
       'Participant',
     email: user?.primaryEmailAddress?.emailAddress || '',
-  }
+  }), [user?.id, user?.fullName, user?.firstName, user?.primaryEmailAddress?.emailAddress])
 
   // Fetch meeting metadata & actions
   useEffect(() => {
@@ -138,10 +138,10 @@ const MeetingRoom = () => {
     return () => document.removeEventListener('fullscreenchange', handleFsChange)
   }, [])
 
-  const handleMeetingEnded = () => {
+  const handleMeetingEnded = useCallback(() => {
     setIsMeetingActive(false)
     navigate('/dashboard')
-  }
+  }, [navigate])
 
   /*
    * WebRTC Hook

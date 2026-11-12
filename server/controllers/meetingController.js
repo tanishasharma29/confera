@@ -370,6 +370,21 @@ export const getMeetingStats = async (req, res) => {
   }
 };
 
+// 5b. Update user plan
+export const updatePlan = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const plan = req.body?.plan === "free" ? "free" : "premium";
+    await sql`
+      UPDATE users SET plan = ${plan}, updated_at = NOW() WHERE id = ${userId}
+    `;
+    res.json({ success: true, plan });
+  } catch (error) {
+    console.error("updatePlan failed:", error);
+    res.status(500).json({ error: "Failed to update plan" });
+  }
+};
+
 // 6. Get meeting memories for user
 export const getMeetingMemories = async (req, res) => {
   try {
