@@ -15,10 +15,8 @@ import {
   ListTodo,
   CheckCircle2,
   Circle,
-  Plus,
   Send,
   MessageSquare,
-  Search,
   Download,
   Share2,
   LayoutDashboard,
@@ -27,10 +25,9 @@ import {
   Mic,
   MicOff,
   Video,
-  Volume2,
 } from 'lucide-react'
 
-import api from '../config/api'
+import api, { setClerkUserId } from '../config/api'
 import useWebRTC from '../hooks/useWebRTC'
 import useChat from '../hooks/useChat'
 
@@ -56,10 +53,7 @@ const MeetingRoom = () => {
   const [suggestedTaskDismissed, setSuggestedTaskDismissed] = useState(false)
 
   // Live notes
-  const [liveNotes, setLiveNotes] = useState([
-    'The partner team approved the onboarding direction.',
-    'Need final copy, owners, and pilot launch dates before Monday.',
-  ])
+  const [liveNotes, setLiveNotes] = useState([])
   const [newNoteInput, setNewNoteInput] = useState('')
 
   // Chat message input
@@ -82,6 +76,9 @@ const MeetingRoom = () => {
     if (!meetingId) return
 
     let isMounted = true
+    if (user?.id) {
+      setClerkUserId(user.id)
+    }
     const fetchMeeting = async () => {
       try {
         const [meetingRes, actionsRes] = await Promise.allSettled([
@@ -92,7 +89,24 @@ const MeetingRoom = () => {
         if (!isMounted) return
 
         if (meetingRes.status === 'fulfilled' && meetingRes.value?.data?.meeting) {
-          setMeetingDetails(meetingRes.value.data.meeting)
+          const m = meetingRes.value.data.meeting
+          if (m.status === 'ended') {
+            toast.error('This meeting has already ended.')
+            navigate('/dashboard')
+            return
+          }
+          setMeetingDetails(m)
+        } else if (meetingRes.status === 'rejected') {
+          const httpStatus = meetingRes.reason?.response?.status
+          if (httpStatus === 404) {
+            toast.error('Meeting not found.')
+            navigate('/dashboard')
+            return
+          } else if (httpStatus === 410) {
+            toast.error('This meeting has already ended.')
+            navigate('/dashboard')
+            return
+          }
         }
 
         if (actionsRes.status === 'fulfilled' && actionsRes.value?.data?.actionItems) {
@@ -190,7 +204,7 @@ const MeetingRoom = () => {
       : true
 
   const rawHost = meetingDetails?.host?.name || user?.fullName || 'Karl Chen'
-  const hostName = rawHost.replace(/\|\|.*\]/, '').replace(/[\[\]"']/g, '').trim() || 'Karl Chen'
+  const hostName = rawHost.replace(/\|\|.*\]/, '').replace(/[[\]"']/g, '').trim() || 'Karl Chen'
 
   // End meeting for everyone
   const handleEndMeeting = () => {
@@ -228,26 +242,6 @@ const MeetingRoom = () => {
     return `${pad(minutes)}:${pad(seconds)}`
   }
 
-  // Add Task directly to Action Tracker
-  const handleAddSuggestedTask = async () => {
-    try {
-      const res = await api.post('/api/meetings/actions', {
-        title: 'Finalize partner launch brief',
-        meetingId: meetingId,
-        assignedTo: 'Karl Chen',
-        dueDate: '2026-08-15',
-      })
-      if (res.data?.actionItem) {
-        setMeetingActions((prev) => [res.data.actionItem, ...prev])
-      }
-      setSuggestedTaskDismissed(true)
-      toast.success('Added to Action Tracker')
-    } catch (err) {
-      console.error('Failed to add task:', err)
-      toast.error('Could not add task')
-    }
-  }
-
   const handleCreateCustomAction = async (e) => {
     e.preventDefault()
     if (!newActionInput.trim()) return
@@ -277,6 +271,10 @@ const MeetingRoom = () => {
     try {
       await api.patch(`/api/meetings/actions/${id}`, { status: newStatus })
     } catch {
+      // Rollback optimistic update
+      setMeetingActions((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: currentStatus } : a))
+      )
       toast.error('Could not update task')
     }
   }
@@ -727,79 +725,62 @@ const MeetingRoom = () => {
             {/* TAB 1: FOLLOW-UPS & AI SUMMARY (Exact Nodi Design) */}
             {activeRightTab === 'followups' && (
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* Highlight Note Card */}
-                {!suggestedTaskDismissed && (
+                {/* Active Action Item / Focus Card */}
+                {!suggestedTaskDismissed && meetingActions.length > 0 && (
                   <div className="p-4 sm:p-5 rounded-2xl bg-[#292724] border border-[rgba(234,231,224,0.1)] space-y-4 shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#42B8AD] bg-[#42B8AD]/15 px-2.5 py-0.5 rounded-full border border-[#42B8AD]/30">
-                        Note
+                        Active Task
                       </span>
-                      <span className="text-xs text-[#77736C]">Live Insight</span>
-                    </div>
-
-                    <p className="text-xs font-medium text-[#EAE7E0] leading-relaxed">
-                      The launch brief still needs final owners, pilot dates and the approved onboarding workflow.
-                    </p>
-
-                    <div className="space-y-2 pt-1 text-xs">
-                      <div className="flex items-center justify-between text-[#BDBAB3]">
-                        <span className="text-[#77736C] flex items-center gap-1.5">
-                          <Users size={13} /> Team assignees
-                        </span>
-                        <div className="flex items-center -space-x-1.5">
-                          {['Karl', 'Maya', 'Simon'].map((name, i) => (
-                            <div
-                              key={i}
-                              className="w-5 h-5 rounded-full bg-[#22201D] border border-[rgba(234,231,224,0.2)] flex items-center justify-center text-[9px] font-bold text-[#EAE7E0]"
-                            >
-                              {name.charAt(0)}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[#BDBAB3]">
-                        <span className="text-[#77736C] flex items-center gap-1.5">
-                          <Calendar size={13} /> Task deadline
-                        </span>
-                        <span className="font-mono text-[11px] text-[#EAE7E0]">15 Aug 2026</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[#BDBAB3]">
-                        <span className="text-[#77736C]">Priority</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E6534B]/15 text-[#E6534B] border border-[#E6534B]/30">
-                          High
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Suggested Task Sub-card */}
-                    <div className="p-3.5 rounded-xl bg-[#22201D] border border-[rgba(234,231,224,0.08)] space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-[#EAE7E0]">
-                          *Finalize partner launch brief
-                        </span>
-                        <Sparkles size={13} className="text-[#42B8AD]" />
-                      </div>
-                      <p className="text-[11px] text-[#BDBAB3] leading-relaxed">
-                        Combine the approved flow, owners and pilot dates before next Monday meeting.
-                      </p>
-
-                      <div className="flex items-center justify-end gap-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#77736C]">Meeting Focus</span>
                         <button
                           type="button"
                           onClick={() => setSuggestedTaskDismissed(true)}
-                          className="px-3 py-1 rounded-lg text-[11px] font-medium text-[#77736C] hover:text-[#BDBAB3] transition-colors"
+                          className="text-[#77736C] hover:text-[#EAE7E0] text-xs transition-colors ml-1 cursor-pointer"
+                          title="Dismiss"
                         >
-                          Dismiss
+                          ✕
                         </button>
-                        <button
-                          type="button"
-                          onClick={handleAddSuggestedTask}
-                          className="px-3.5 py-1.5 rounded-lg bg-[#42B8AD] hover:bg-[#399e94] text-[#171614] text-[11px] font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
-                        >
-                          Add task
-                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-medium text-[#EAE7E0] leading-relaxed">
+                      {meetingActions[0].title}
+                    </p>
+
+                    <div className="space-y-2 pt-1 text-xs">
+                      {meetingActions[0].assigned_to && (
+                        <div className="flex items-center justify-between text-[#BDBAB3]">
+                          <span className="text-[#77736C] flex items-center gap-1.5">
+                            <Users size={13} /> Assignee
+                          </span>
+                          <span className="text-xs text-[#EAE7E0] font-medium">
+                            {meetingActions[0].assigned_to}
+                          </span>
+                        </div>
+                      )}
+
+                      {meetingActions[0].due_date && (
+                        <div className="flex items-center justify-between text-[#BDBAB3]">
+                          <span className="text-[#77736C] flex items-center gap-1.5">
+                            <Calendar size={13} /> Task deadline
+                          </span>
+                          <span className="font-mono text-[11px] text-[#EAE7E0]">
+                            {new Date(meetingActions[0].due_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[#BDBAB3]">
+                        <span className="text-[#77736C]">Status</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                          meetingActions[0].status === 'completed'
+                            ? 'bg-[#42B8AD]/15 text-[#42B8AD] border border-[#42B8AD]/30'
+                            : 'bg-[#F28C38]/15 text-[#F28C38] border border-[#F28C38]/30'
+                        }`}>
+                          {meetingActions[0].status}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -910,15 +891,21 @@ const MeetingRoom = () => {
             {activeRightTab === 'notes' && (
               <div className="flex-1 flex flex-col min-h-0 p-4 space-y-3">
                 <div className="flex-1 overflow-y-auto space-y-2">
-                  {liveNotes.map((note, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-[#292724] border border-[rgba(234,231,224,0.08)] text-xs text-[#EAE7E0] flex items-start gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#42B8AD] mt-1.5 shrink-0" />
-                      <p className="leading-relaxed">{note}</p>
+                  {liveNotes.length === 0 ? (
+                    <div className="p-4 rounded-xl border border-dashed border-[rgba(234,231,224,0.15)] text-center text-xs text-[#77736C]">
+                      No session notes pinned yet. Capture real-time discussion notes below.
                     </div>
-                  ))}
+                  ) : (
+                    liveNotes.map((note, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-[#292724] border border-[rgba(234,231,224,0.08)] text-xs text-[#EAE7E0] flex items-start gap-2"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#42B8AD] mt-1.5 shrink-0" />
+                        <p className="leading-relaxed">{note}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 <form onSubmit={handleAddLiveNote} className="pt-2 flex gap-2">

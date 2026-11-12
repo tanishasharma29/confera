@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Check,
   Building,
-  HelpCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../config/api'
@@ -28,8 +27,6 @@ const CheckoutModal = ({
   const [cardExpiry, setCardExpiry] = useState('12/28')
   const [cardCvc, setCardCvc] = useState('888')
   const [cardName, setCardName] = useState(userName || 'Tanisha Sharma')
-  const [country, setCountry] = useState('United States')
-  const [postalCode, setPostalCode] = useState('10001')
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)

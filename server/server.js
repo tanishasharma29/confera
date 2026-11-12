@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 import cors from "cors"; 
 import http from "http";
 import cookieParser from "cookie-parser"; 
-import { initDB } from "./config/db.js"; 
+import { initDB, sql } from "./config/db.js"; 
 import { clerkMiddleware } from '@clerk/express';
 import { handleClerkWebhook } from "./controllers/webhookController.js";
 import meetingRouter from './routes/meetingRoutes.js';
@@ -27,20 +27,41 @@ try {
   console.warn("[Database] Startup initialization warning (database will initialize on demand):", err.message);
 }
 
-const allowedOrigins = (process.env.ORIGINS || "http://localhost:5173,http://localhost:3000")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+// Validate essential environment variables
+const isProduction = process.env.NODE_ENV === "production";
+const requiredEnvVars = ["DATABASE_URL", "CLERK_SECRET_KEY"];
+const missingEnvVars = requiredEnvVars.filter((v) => !process.env[v]);
+if (missingEnvVars.length > 0) {
+  if (isProduction) {
+    console.error(`[CRITICAL] Missing required environment variables in production: ${missingEnvVars.join(", ")}`);
+  } else {
+    console.warn(`[Config] Notice: Missing optional/dev environment variables: ${missingEnvVars.join(", ")}`);
+  }
+}
+
+const defaultDevOrigins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"];
+const allowedOrigins = process.env.ORIGINS
+  ? process.env.ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
+  : (isProduction ? [] : defaultDevOrigins);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Direct non-browser requests (e.g. health checks, server-to-server)
+  if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+    return true;
+  }
+  if (!isProduction && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"))) {
+    return true;
+  }
+  return false;
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Dev fallback
+      return callback(new Error(`CORS policy violation: origin '${origin}' is not allowed.`));
     },
     credentials: true,
   })
@@ -61,7 +82,22 @@ app.use("/api/clerk", express.raw({ type: "application/json" }), handleClerkWebh
 
 app.use(express.json({ limit: "1mb" }));
 app.get("/", (_req, res) => res.json({ status: "ok", app: "Confera API", version: "1.0.0" }));
-app.get("/health", (_req, res) => res.json({ status: "healthy", timestamp: new Date().toISOString() }));
+
+app.get("/health", async (_req, res) => {
+  let dbStatus = "unreachable";
+  try {
+    const [row] = await sql`SELECT 1 as connected`;
+    if (row?.connected === 1) dbStatus = "connected";
+  } catch (err) {
+    dbStatus = "error: " + err.message;
+  }
+  const isHealthy = dbStatus === "connected" || !process.env.DATABASE_URL;
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "healthy" : "degraded",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+  });
+});
 
 app.use(
   clerkMiddleware({
@@ -74,7 +110,12 @@ app.use("/api/meetings", meetingRouter);
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Socket.IO CORS policy violation: origin '${origin}' is not allowed.`));
+    },
     credentials: true,
   },
   pingTimeout: 30000,
@@ -92,8 +133,9 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
-if (process.env.NODE_ENV !== "test") {
+if (isMainModule && process.env.NODE_ENV !== "test") {
   server.listen(PORT, () => {
     console.log(`Confera server running at http://localhost:${PORT}`);
   });
