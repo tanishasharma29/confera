@@ -1,14 +1,9 @@
 import axios from "axios";
 
 let tokenGetter = null;
-let currentUserId = null;
 
 export const setClerkTokenGetter = (getter) => {
   tokenGetter = getter;
-};
-
-export const setClerkUserId = (id) => {
-  currentUserId = id;
 };
 
 const api = axios.create({
@@ -38,11 +33,6 @@ api.interceptors.request.use(async (config) => {
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    const effectiveUserId = currentUserId || window.Clerk?.user?.id;
-    if (effectiveUserId) {
-      config.headers["x-user-id"] = effectiveUserId;
     }
   } catch (err) {
     console.warn("[API] Error in request interceptor:", err.message);

@@ -62,37 +62,7 @@ const CheckoutModal = ({
 
   const handleSubmitPayment = async (e) => {
     e?.preventDefault?.()
-    if (isProcessing) return
-
-    try {
-      setIsProcessing(true)
-
-      // Simulate realistic bank / PCI payment authorization
-      await new Promise((resolve) => setTimeout(resolve, 1400))
-
-      // Update real backend database to Pro/Premium plan
-      const res = await api.post('/api/meetings/plan', {
-        plan: 'premium',
-        billingCycle,
-      })
-
-      if (res.data?.success) {
-        const generatedTx = `tx_conf_${Math.random().toString(36).substring(2, 9)}_${Date.now().toString(36)}`
-        setTxId(generatedTx)
-        setIsSuccess(true)
-        if (onSuccess) {
-          onSuccess('premium')
-        }
-        toast.success('Subscription activated! Welcome to Confera Pro.')
-      } else {
-        throw new Error('Failed to update plan status')
-      }
-    } catch (err) {
-      console.error('Checkout error:', err)
-      toast.error('Payment authorization failed. Please check your credentials.')
-    } finally {
-      setIsProcessing(false)
-    }
+    toast.error('Online checkout is currently unavailable. Payment gateway integration is pending configuration for production.')
   }
 
   return (
@@ -331,27 +301,16 @@ const CheckoutModal = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isProcessing}
-                  className="w-full py-3.5 rounded-xl bg-[#42B8AD] hover:bg-[#399e94] text-[#171614] text-xs font-bold transition-all shadow-lg shadow-[#42B8AD]/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99]"
+                  className="w-full py-3.5 rounded-xl bg-[#292724] border border-[rgba(234,231,224,0.15)] text-[#BDBAB3] hover:text-[#EAE7E0] text-xs font-bold transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99]"
                 >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-[#171614] border-t-transparent rounded-full animate-spin" />
-                      <span>Processing Secure Payment...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={13} />
-                      <span>Pay ${currentPrice}.00 & Activate Pro</span>
-                      <ArrowRight size={13} />
-                    </>
-                  )}
+                  <Lock size={13} className="text-[#42B8AD]" />
+                  <span>Online Checkout Pending Gateway Setup</span>
                 </button>
               </div>
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-[#77736C] text-center pt-1">
                 <ShieldCheck size={12} className="text-[#42B8AD]" />
-                <span>PCI-DSS Level 1 Certified • Cancel anytime with 1-click</span>
+                <span>Payment gateway configuration pending • No charges will be incurred</span>
               </div>
             </form>
 

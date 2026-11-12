@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@clerk/react'
-import { setClerkTokenGetter, setClerkUserId } from './config/api'
+import { setClerkTokenGetter } from './config/api'
 
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -17,14 +17,11 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Protectedlayout from './components/Protectedlayout'
 
 const App = () => {
-  const { getToken, userId } = useAuth()
+  const { getToken } = useAuth()
 
   useEffect(() => {
     setClerkTokenGetter(() => getToken())
-    if (userId) {
-      setClerkUserId(userId)
-    }
-  }, [getToken, userId])
+  }, [getToken])
   return (
     <>
       <Toaster

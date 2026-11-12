@@ -374,21 +374,14 @@ export const updatePlan = async (req, res) => {
     }
 
     if (requestedPlan === "premium") {
-      // In production with a configured payment gateway, require billing signature or admin verification
-      const isProd = process.env.NODE_ENV === "production";
-      if (isProd && process.env.STRIPE_WEBHOOK_SECRET && !req.user?.isAdmin) {
-        return res.status(403).json({
-          error: "Plan upgrades must be processed through the verified payment gateway webhook.",
-        });
-      }
-
-      await sql`
-        UPDATE users SET plan = 'premium', updated_at = NOW() WHERE id = ${userId}
-      `;
-      return res.json({ success: true, plan: "premium" });
+      return res.status(501).json({
+        error: "Direct client premium activation is disabled. Online billing gateway (Stripe/Razorpay) integration is pending configuration.",
+        code: "PAYMENT_GATEWAY_NOT_CONFIGURED",
+        paymentAvailable: false,
+      });
     }
 
-    return res.status(400).json({ error: "Invalid plan specified. Allowed values: 'free' or 'premium'" });
+    return res.status(400).json({ error: "Invalid plan specified. Allowed values: 'free'" });
   } catch (error) {
     console.error("updatePlan failed:", error);
     res.status(500).json({ error: "Failed to update plan" });

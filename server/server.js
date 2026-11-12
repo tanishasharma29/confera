@@ -30,10 +30,11 @@ try {
 // Validate essential environment variables
 const isProduction = process.env.NODE_ENV === "production";
 const requiredEnvVars = ["DATABASE_URL", "CLERK_SECRET_KEY"];
-const missingEnvVars = requiredEnvVars.filter((v) => !process.env[v]);
+const missingEnvVars = requiredEnvVars.filter((v) => !process.env[v]?.trim());
 if (missingEnvVars.length > 0) {
   if (isProduction) {
     console.error(`[CRITICAL] Missing required environment variables in production: ${missingEnvVars.join(", ")}`);
+    throw new Error(`[Server] FATAL: Missing required environment variables in production: ${missingEnvVars.join(", ")}`);
   } else {
     console.warn(`[Config] Notice: Missing optional/dev environment variables: ${missingEnvVars.join(", ")}`);
   }
@@ -41,15 +42,16 @@ if (missingEnvVars.length > 0) {
 
 const defaultDevOrigins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"];
 const allowedOrigins = process.env.ORIGINS
-  ? process.env.ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
+  ? process.env.ORIGINS.split(",").map((origin) => origin.trim().replace(/\/+$/, "")).filter((o) => Boolean(o) && o !== "*")
   : (isProduction ? [] : defaultDevOrigins);
 
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // Direct non-browser requests (e.g. health checks, server-to-server)
-  if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+  const normalizedOrigin = origin.trim().replace(/\/+$/, "");
+  if (allowedOrigins.includes(normalizedOrigin)) {
     return true;
   }
-  if (!isProduction && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"))) {
+  if (!isProduction && (normalizedOrigin.startsWith("http://localhost:") || normalizedOrigin.startsWith("http://127.0.0.1:"))) {
     return true;
   }
   return false;
@@ -85,15 +87,20 @@ app.get("/", (_req, res) => res.json({ status: "ok", app: "Confera API", version
 
 app.get("/health", async (_req, res) => {
   let dbStatus = "unreachable";
+  let isConnected = false;
   try {
     const [row] = await sql`SELECT 1 as connected`;
-    if (row?.connected === 1) dbStatus = "connected";
+    if (row?.connected === 1) {
+      dbStatus = "connected";
+      isConnected = true;
+    }
   } catch (err) {
     dbStatus = "error: " + err.message;
   }
-  const isHealthy = dbStatus === "connected" || !process.env.DATABASE_URL;
-  res.status(isHealthy ? 200 : 503).json({
-    status: isHealthy ? "healthy" : "degraded",
+
+  const statusCode = isConnected ? 200 : 503;
+  res.status(statusCode).json({
+    status: isConnected ? "healthy" : "unhealthy",
     database: dbStatus,
     timestamp: new Date().toISOString(),
   });
