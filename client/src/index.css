@@ -1,41 +1,743 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:ital,wght@0,100..900;1,100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Geist+Mono:wght@300..700&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-    --color-primary: #004cff;
-    --color-primary-hover: #0033ad;
-    --color-primary-light: #d9e4ff;
-    --color-primary-border: #7a9cff;
+  --color-bg-primary: #171614;
+  --color-bg-secondary: #22201D;
+  --color-bg-card: #292724;
+  --color-warm-taupe: #514D47;
+  --color-muted-grey: #77736C;
+  --color-text-primary: #EAE7E0;
+  --color-text-secondary: #BDBAB3;
+  --color-teal-accent: #42B8AD;
+  --color-danger: #E6534B;
+  --color-border-subtle: rgba(234, 231, 224, 0.12);
+  --color-border-hover: rgba(234, 231, 224, 0.24);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: var(--font-serif);
+  }
 }
 
 @layer base {
-    * {
-        font-family: "Urbanist", sans-serif;
-        box-sizing: border-box;
-    }
+  * {
+    font-family: var(--font-sans);
+    box-sizing: border-box;
+  }
 
-    body {
-        @apply bg-slate-50 text-slate-900 antialiased min-h-screen;
-    }
+  body {
+    background-color: #171614;
+    color: #EAE7E0;
+    antialiased: true;
+    min-height: 100vh;
+    overflow-x: hidden;
+    selection-background-color: #42B8AD;
+    selection-color: #171614;
+  }
+
+  ::selection {
+    background: rgba(66, 184, 173, 0.35);
+    color: #EAE7E0;
+  }
 }
 
 /* Custom Scrollbar */
-
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
+  background: #514D47;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+  background: #77736C;
+}
+
+/* Glassmorphic and surface utility helpers */
+.glass-panel {
+  background: rgba(41, 39, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+}
+
+.glass-panel-subtle {
+  background: rgba(34, 32, 29, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 231, 224, 0.08);
+}
+
+.glass-pill {
+  background: rgba(41, 39, 36, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 231, 224, 0.14);
+}
+
+.glass-pill:hover {
+  border-color: rgba(234, 231, 224, 0.26);
+  background: rgba(51, 48, 44, 0.9);
+}
+
+.card-warm {
+  background: #292724;
+  border: 1px solid rgba(234, 231, 224, 0.12);
+}
+
+.card-warm-hover:hover {
+  border-color: rgba(234, 231, 224, 0.24);
+  background: #2e2c28;
+}
+
+/* ========================================================
+   Confera Premium Ambient Aurora & Section Lighting System
+   (Volumetric, soft diffused ambient lighting; no thin stroke lines)
+======================================================== */
+.confera-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+/* Primary Top-Left Teal Aurora Bloom */
+.confera-aurora-glow-1 {
+  position: absolute;
+  top: -12%;
+  left: -8%;
+  width: 78vw;
+  height: 72vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 40%,
+    rgba(66, 184, 173, 0.15) 0%,
+    rgba(20, 184, 166, 0.08) 45%,
+    rgba(15, 118, 110, 0.02) 70%,
+    transparent 85%
+  );
+  filter: blur(85px);
+  animation: conferaAuroraDrift1 26s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Secondary Center-Right Cyan Aurora Bloom */
+.confera-aurora-glow-2 {
+  position: absolute;
+  top: 28%;
+  right: -10%;
+  width: 72vw;
+  height: 68vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 60% 50%,
+    rgba(6, 182, 212, 0.12) 0%,
+    rgba(56, 189, 248, 0.05) 40%,
+    rgba(13, 148, 136, 0.02) 70%,
+    transparent 85%
+  );
+  filter: blur(95px);
+  animation: conferaAuroraDrift2 32s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Deep Emerald Foundation Bloom */
+.confera-aurora-glow-3 {
+  position: absolute;
+  bottom: -15%;
+  left: 18%;
+  width: 68vw;
+  height: 58vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(16, 185, 129, 0.08) 0%,
+    rgba(66, 184, 173, 0.03) 50%,
+    transparent 80%
+  );
+  filter: blur(105px);
+  animation: conferaAuroraDrift3 28s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Subtle Vignette Veil to gently ground the dark edges */
+.confera-aurora-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 45%,
+    rgba(23, 22, 20, 0.4) 80%,
+    rgba(23, 22, 20, 0.85) 100%
+  );
+}
+
+@keyframes conferaAuroraDrift1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translate3d(2%, 3%, 0) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-1.8%, 1.2%, 0) scale(0.97);
+    opacity: 0.86;
+  }
+}
+
+@keyframes conferaAuroraDrift2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.78;
+  }
+  50% {
+    transform: translate3d(-2.5%, -2%, 0) scale(1.025);
+    opacity: 0.96;
+  }
+  100% {
+    transform: translate3d(1.8%, 2.2%, 0) scale(0.96);
+    opacity: 0.8;
+  }
+}
+
+@keyframes conferaAuroraDrift3 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translate3d(2%, -2.5%, 0) scale(1.04);
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(-2.2%, 1%, 0) scale(0.98);
+    opacity: 0.76;
+  }
+}
+
+/* ========================================================
+   Section-Specific Custom Background & Ambient Glow Classes
+======================================================== */
+
+/* 1. Welcome Hero Section: Prominent teal ambient glow with multi-position diffusion */
+.bg-section-hero {
+  position: relative;
+  background-color: #201E1B;
+  background-image:
+    radial-gradient(ellipse 75% 65% at 20% 10%, rgba(66, 184, 173, 0.22) 0%, rgba(20, 184, 166, 0.08) 50%, transparent 75%),
+    radial-gradient(ellipse 55% 55% at 85% 25%, rgba(6, 182, 212, 0.15) 0%, rgba(15, 118, 110, 0.04) 45%, transparent 70%),
+    radial-gradient(circle 350px at 50% 100%, rgba(66, 184, 173, 0.07) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(34, 32, 29, 0.96) 0%, rgba(25, 23, 20, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(234, 231, 224, 0.1);
+}
+
+/* 2. Launch Meeting Card: Deep charcoal with soft emerald/teal corner radial glow */
+.bg-section-launch {
+  position: relative;
+  background-color: #211F1C;
+  background-image:
+    radial-gradient(circle 380px at 0% 0%, rgba(66, 184, 173, 0.18) 0%, rgba(16, 185, 129, 0.06) 45%, transparent 70%),
+    linear-gradient(165deg, rgba(35, 33, 30, 0.96) 0%, rgba(27, 25, 22, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.08);
+}
+.bg-section-launch:hover {
+  border-color: rgba(66, 184, 173, 0.35);
+}
+
+/* 3. Join Active Meeting Card: Dark blue-teal gradient with subtle cyan ambient lighting */
+.bg-section-join {
+  position: relative;
+  background-color: #1F2122;
+  background-image:
+    radial-gradient(circle 380px at 100% 0%, rgba(56, 189, 248, 0.16) 0%, rgba(6, 182, 212, 0.07) 45%, transparent 70%),
+    linear-gradient(155deg, rgba(31, 34, 36, 0.96) 0%, rgba(25, 27, 28, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.08);
+}
+.bg-section-join:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* 4. Meeting Memory Card: Sophisticated deep teal atmospheric gradient with subtle highlights */
+.bg-section-memory {
+  position: relative;
+  background-color: #1A2120;
+  background-image:
+    radial-gradient(ellipse 85% 65% at 15% 15%, rgba(20, 184, 166, 0.22) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 75%),
+    radial-gradient(circle 350px at 85% 85%, rgba(66, 184, 173, 0.10) 0%, transparent 65%),
+    linear-gradient(150deg, rgba(28, 37, 35, 0.95) 0%, rgba(23, 27, 26, 0.98) 100%);
+  border: 1px solid rgba(66, 184, 173, 0.22);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.09);
+}
+
+/* 5. Action Tracker Card: Dark emerald/charcoal gradient with subtle green ambient lighting */
+.bg-section-action {
+  position: relative;
+  background-color: #1A201D;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 85% 15%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.06) 50%, transparent 75%),
+    radial-gradient(circle 300px at 15% 85%, rgba(66, 184, 173, 0.07) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(27, 34, 30, 0.95) 0%, rgba(23, 27, 24, 0.98) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.08);
+}
+
+/* 6. Recent Sessions Card: Dark background with soft cyan radial glow */
+.bg-section-sessions {
+  position: relative;
+  background-color: #1E2021;
+  background-image:
+    radial-gradient(ellipse 75% 60% at 90% 15%, rgba(6, 182, 212, 0.15) 0%, rgba(14, 165, 233, 0.05) 45%, transparent 75%),
+    radial-gradient(circle 300px at 10% 85%, rgba(66, 184, 173, 0.06) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(32, 35, 36, 0.96) 0%, rgba(25, 27, 28, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.08);
+}
+
+/* 7. Metric Cards Strip: Charcoal with soft teal top-right highlight */
+.bg-section-metric {
+  position: relative;
+  background-color: #22201D;
+  background-image:
+    radial-gradient(circle 220px at 85% 15%, rgba(66, 184, 173, 0.08) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(35, 33, 30, 0.96) 0%, rgba(29, 27, 24, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.1);
+}
+
+/* 8. Permanent Intelligence Callout */
+.bg-section-callout {
+  position: relative;
+  background-color: #242422;
+  background-image:
+    radial-gradient(circle 320px at 15% 15%, rgba(66, 184, 173, 0.14) 0%, transparent 70%),
+    linear-gradient(145deg, rgba(39, 38, 35, 0.95) 0%, rgba(31, 29, 26, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+}
+
+/* ========================================================
+   Page-Specific Ambient Canvas & Surface Systems
+======================================================== */
+
+/* --------------------------------------------------------
+   A. Meeting Memory Page System (Deep Teal & Cyan Atmosphere)
+-------------------------------------------------------- */
+.memory-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+.memory-aurora-glow-1 {
+  position: absolute;
+  top: -10%;
+  left: -5%;
+  width: 75vw;
+  height: 70vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 40%,
+    rgba(20, 184, 166, 0.18) 0%,
+    rgba(66, 184, 173, 0.09) 45%,
+    rgba(13, 148, 136, 0.03) 70%,
+    transparent 85%
+  );
+  filter: blur(85px);
+  animation: conferaAuroraDrift1 28s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.memory-aurora-glow-2 {
+  position: absolute;
+  top: 25%;
+  right: -8%;
+  width: 70vw;
+  height: 65vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 60% 50%,
+    rgba(6, 182, 212, 0.15) 0%,
+    rgba(56, 189, 248, 0.06) 40%,
+    transparent 80%
+  );
+  filter: blur(95px);
+  animation: conferaAuroraDrift2 34s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.memory-aurora-glow-3 {
+  position: absolute;
+  bottom: -15%;
+  left: 25%;
+  width: 65vw;
+  height: 55vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(15, 118, 110, 0.10) 0%,
+    rgba(66, 184, 173, 0.04) 50%,
+    transparent 80%
+  );
+  filter: blur(105px);
+  animation: conferaAuroraDrift3 30s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.bg-memory-panel {
+  position: relative;
+  background-color: #1C2423;
+  background-image:
+    radial-gradient(circle 350px at 0% 0%, rgba(20, 184, 166, 0.16) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 75%),
+    linear-gradient(155deg, rgba(30, 39, 37, 0.95) 0%, rgba(25, 29, 28, 0.98) 100%);
+  border: 1px solid rgba(66, 184, 173, 0.2);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(234, 231, 224, 0.08);
+}
+
+.bg-memory-search {
+  background-color: rgba(31, 38, 37, 0.9);
+  background-image: radial-gradient(circle 300px at 10% 50%, rgba(20, 184, 166, 0.10) 0%, transparent 70%);
+}
+
+.bg-memory-card {
+  position: relative;
+  background-color: #212524;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 10% 10%, rgba(20, 184, 166, 0.14) 0%, rgba(6, 182, 212, 0.04) 50%, transparent 75%),
+    linear-gradient(160deg, rgba(37, 43, 41, 0.94) 0%, rgba(29, 32, 31, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.35);
+}
+
+.bg-memory-card:hover {
+  border-color: rgba(66, 184, 173, 0.32);
+}
+
+/* --------------------------------------------------------
+   B. Action Tracker Page System (Dark Emerald & Green Atmosphere)
+-------------------------------------------------------- */
+.actions-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+.actions-aurora-glow-1 {
+  position: absolute;
+  top: -12%;
+  right: -5%;
+  width: 76vw;
+  height: 70vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    rgba(16, 185, 129, 0.17) 0%,
+    rgba(5, 150, 105, 0.08) 45%,
+    rgba(6, 95, 70, 0.03) 70%,
+    transparent 85%
+  );
+  filter: blur(85px);
+  animation: conferaAuroraDrift2 27s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.actions-aurora-glow-2 {
+  position: absolute;
+  top: 30%;
+  left: -10%;
+  width: 72vw;
+  height: 65vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 50%,
+    rgba(52, 211, 153, 0.11) 0%,
+    rgba(66, 184, 173, 0.06) 40%,
+    transparent 80%
+  );
+  filter: blur(95px);
+  animation: conferaAuroraDrift1 33s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.actions-aurora-glow-3 {
+  position: absolute;
+  bottom: -15%;
+  left: 20%;
+  width: 66vw;
+  height: 56vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(4, 120, 87, 0.09) 0%,
+    rgba(16, 185, 129, 0.03) 50%,
+    transparent 80%
+  );
+  filter: blur(105px);
+  animation: conferaAuroraDrift3 29s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.bg-action-task-pending {
+  position: relative;
+  background-color: #1F2420;
+  background-image:
+    radial-gradient(circle 350px at 0% 0%, rgba(16, 185, 129, 0.14) 0%, rgba(5, 150, 105, 0.04) 50%, transparent 75%),
+    linear-gradient(160deg, rgba(35, 42, 37, 0.95) 0%, rgba(27, 31, 28, 0.98) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.35);
+}
+.bg-action-task-pending:hover {
+  border-color: rgba(16, 185, 129, 0.38);
+}
+
+.bg-action-task-completed {
+  position: relative;
+  background-color: #1C1E1D;
+  background-image:
+    radial-gradient(circle 300px at 0% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(29, 31, 30, 0.95) 0%, rgba(24, 25, 24, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.08);
+  opacity: 0.78;
+}
+
+/* --------------------------------------------------------
+   C. Sessions Page System (Sophisticated Dark Blue-Teal Atmosphere)
+-------------------------------------------------------- */
+.sessions-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+.sessions-aurora-glow-1 {
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 75vw;
+  height: 68vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    rgba(14, 165, 233, 0.15) 0%,
+    rgba(6, 182, 212, 0.09) 45%,
+    rgba(15, 118, 110, 0.03) 70%,
+    transparent 85%
+  );
+  filter: blur(85px);
+  animation: conferaAuroraDrift2 26s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.sessions-aurora-glow-2 {
+  position: absolute;
+  top: 30%;
+  left: -8%;
+  width: 70vw;
+  height: 65vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 50%,
+    rgba(56, 189, 248, 0.12) 0%,
+    rgba(66, 184, 173, 0.06) 40%,
+    transparent 80%
+  );
+  filter: blur(95px);
+  animation: conferaAuroraDrift1 32s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.sessions-aurora-glow-3 {
+  position: absolute;
+  bottom: -15%;
+  left: 30%;
+  width: 65vw;
+  height: 55vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(3, 105, 161, 0.09) 0%,
+    rgba(14, 165, 233, 0.03) 50%,
+    transparent 80%
+  );
+  filter: blur(105px);
+  animation: conferaAuroraDrift3 28s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.bg-session-card-ambient {
+  position: relative;
+  background-color: #1F2224;
+  background-image:
+    radial-gradient(circle 350px at 100% 0%, rgba(6, 182, 212, 0.14) 0%, rgba(14, 165, 233, 0.05) 45%, transparent 70%),
+    linear-gradient(155deg, rgba(33, 37, 40, 0.95) 0%, rgba(26, 29, 31, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+  box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.35);
+}
+.bg-session-card-ambient:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.bg-session-card-active {
+  position: relative;
+  background-color: #1E2526;
+  background-image:
+    radial-gradient(circle 380px at 100% 0%, rgba(66, 184, 173, 0.20) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 75%),
+    linear-gradient(155deg, rgba(31, 41, 41, 0.95) 0%, rgba(24, 30, 30, 0.98) 100%);
+  border: 1px solid rgba(66, 184, 173, 0.35);
+  box-shadow: 0 16px 32px -10px rgba(66, 184, 173, 0.15);
+}
+
+/* --------------------------------------------------------
+   D. Pricing Page System (Premium Charcoal & Subtle Teal)
+-------------------------------------------------------- */
+.pricing-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+.pricing-aurora-glow-1 {
+  position: absolute;
+  top: -10%;
+  left: 20%;
+  width: 70vw;
+  height: 60vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(66, 184, 173, 0.13) 0%,
+    rgba(20, 184, 166, 0.05) 50%,
+    transparent 80%
+  );
+  filter: blur(90px);
+  animation: conferaAuroraDrift1 30s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.pricing-aurora-glow-2 {
+  position: absolute;
+  bottom: -10%;
+  right: 15%;
+  width: 65vw;
+  height: 55vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 182, 212, 0.08) 0%,
+    transparent 75%
+  );
+  filter: blur(100px);
+  animation: conferaAuroraDrift2 32s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.bg-pricing-free {
+  position: relative;
+  background-color: #211F1C;
+  background-image:
+    radial-gradient(circle 280px at 15% 15%, rgba(66, 184, 173, 0.09) 0%, transparent 65%),
+    linear-gradient(165deg, rgba(34, 32, 29, 0.95) 0%, rgba(26, 24, 21, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
+}
+
+.bg-pricing-pro {
+  position: relative;
+  background-color: #222625;
+  background-image:
+    radial-gradient(circle 380px at 85% 10%, rgba(66, 184, 173, 0.19) 0%, rgba(6, 182, 212, 0.07) 50%, transparent 75%),
+    linear-gradient(160deg, rgba(37, 43, 41, 0.96) 0%, rgba(27, 31, 30, 0.98) 100%);
+  border: 1px solid rgba(66, 184, 173, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(66, 184, 173, 0.12);
+}
+
+/* --------------------------------------------------------
+   E. Settings Page System (Minimal Dark Emerald Atmosphere)
+-------------------------------------------------------- */
+.settings-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  background-color: #171614;
+}
+
+.settings-aurora-glow-1 {
+  position: absolute;
+  top: -12%;
+  left: 10%;
+  width: 72vw;
+  height: 60vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 30%,
+    rgba(16, 185, 129, 0.10) 0%,
+    rgba(66, 184, 173, 0.04) 50%,
+    transparent 80%
+  );
+  filter: blur(95px);
+  animation: conferaAuroraDrift1 30s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.settings-aurora-glow-2 {
+  position: absolute;
+  bottom: 10%;
+  right: -5%;
+  width: 65vw;
+  height: 55vh;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 182, 212, 0.07) 0%,
+    transparent 75%
+  );
+  filter: blur(100px);
+  animation: conferaAuroraDrift2 35s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.bg-settings-card {
+  position: relative;
+  background-color: #21201D;
+  background-image:
+    radial-gradient(circle 320px at 15% 15%, rgba(16, 185, 129, 0.08) 0%, rgba(66, 184, 173, 0.03) 45%, transparent 70%),
+    linear-gradient(165deg, rgba(36, 34, 31, 0.96) 0%, rgba(27, 25, 23, 0.98) 100%);
+  border: 1px solid rgba(234, 231, 224, 0.12);
 }

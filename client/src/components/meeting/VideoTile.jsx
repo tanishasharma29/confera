@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { VideoOff } from 'lucide-react'
+import { MicOff, VideoOff, Monitor } from 'lucide-react'
 
 const VideoTile = ({
   stream,
@@ -7,50 +7,98 @@ const VideoTile = ({
   isLocal = false,
   audioEnabled = true,
   videoEnabled = true,
+  isMain = false,
+  isScreenShare = false,
 }) => {
   const videoRef = useRef(null)
 
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream
+  // Attach and play stream immediately upon element mounting
+  const setVideoRef = (element) => {
+    videoRef.current = element
+    if (element && stream) {
+      if (element.srcObject !== stream) {
+        element.srcObject = stream
+      }
+      element.onloadedmetadata = () => {
+        element.play().catch((e) => console.warn('Video play notice:', e.message))
+      }
+      element.play().catch((e) => console.warn('Video play notice:', e.message))
     }
-  }, [stream])
+  }
+
+  // Ensure stream stays bound and playing across prop updates
+  useEffect(() => {
+    const el = videoRef.current
+    if (el && stream && (videoEnabled || isScreenShare)) {
+      if (el.srcObject !== stream) {
+        el.srcObject = stream
+      }
+      el.play?.().catch((e) => console.warn('Video play effect notice:', e.message))
+    }
+  }, [stream, videoEnabled, isScreenShare])
+
+  const initial = (name || 'U').charAt(0).toUpperCase()
+  const showVideo = Boolean(stream && (videoEnabled || isScreenShare))
 
   return (
-    <div className="relative w-full h-full min-h-[240px] rounded-2xl overflow-hidden bg-slate-800 border border-white/10">
-      {/* Video Element */}
-      {stream && videoEnabled ? (
+    <div
+      className={`relative w-full h-full overflow-hidden rounded-2xl md:rounded-3xl bg-[#22201D] border border-[rgba(234,231,224,0.12)] transition-all flex items-center justify-center ${
+        isMain ? 'shadow-2xl shadow-black/60' : 'shadow-md shadow-black/40'
+      }`}
+    >
+      {/* Video Stream Element */}
+      {showVideo ? (
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           autoPlay
           playsInline
           muted={isLocal}
-          className="w-full h-full object-cover"
+          className={`w-full h-full ${
+            isScreenShare ? 'object-contain bg-black' : 'object-cover'
+          } ${isLocal && !isScreenShare ? '-scale-x-100' : ''}`}
         />
       ) : (
-        /* Camera Off Placeholder */
-        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800">
-          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
-            <VideoOff className="w-9 h-9 text-white/70" />
+        /* Camera Off / Avatar State */
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#22201D] p-4 text-center select-none">
+          <div
+            className={`rounded-full bg-gradient-to-br from-[#292724] to-[#171614] border border-[rgba(234,231,224,0.16)] flex items-center justify-center text-[#EAE7E0] font-bold shadow-inner ${
+              isMain ? 'w-24 h-24 text-3xl' : 'w-14 h-14 text-xl'
+            }`}
+          >
+            {initial}
           </div>
-
-          <p className="mt-3 text-sm text-white/70">
-            Camera is off
-          </p>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-[#77736C]">
+            <VideoOff size={13} />
+            <span>Camera off</span>
+          </div>
         </div>
       )}
 
-      {/* Bottom Info Bar Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-white truncate">
+      {/* Floating Participant Name Badge (Offset from in-video dock) */}
+      <div className={`absolute z-10 ${isMain ? 'bottom-16 left-4' : 'bottom-2.5 left-2.5'}`}>
+        <div className="px-3 py-1.5 rounded-full bg-[#171614]/85 backdrop-blur-md border border-[rgba(234,231,224,0.14)] flex items-center gap-2 shadow-lg">
+          {isScreenShare && <Monitor size={12} className="text-[#42B8AD]" />}
+          <span className="text-xs font-medium text-[#EAE7E0] max-w-[140px] truncate">
             {isLocal ? `${name || 'You'} (You)` : name || 'Participant'}
-          </p>
+            {isScreenShare && ' (Screen)'}
+          </span>
 
-          {!audioEnabled && (
-            <div className="px-2 py-1 rounded-md bg-red-500/80 text-xs text-white">
-              Muted
-            </div>
+          {!audioEnabled && !isScreenShare && (
+            <span
+              className="p-1 rounded-full bg-[#E6534B]/20 text-[#E6534B]"
+              title="Microphone is muted"
+            >
+              <MicOff size={11} />
+            </span>
+          )}
+
+          {!videoEnabled && !isScreenShare && (
+            <span
+              className="p-1 rounded-full bg-[#E6534B]/20 text-[#E6534B]"
+              title="Camera is turned off"
+            >
+              <VideoOff size={11} />
+            </span>
           )}
         </div>
       </div>
