@@ -304,16 +304,53 @@ const useWebRTC = (
   /*
    * Toggle local microphone
    */
-  const toggleAudio = useCallback(() => {
-    const stream = localStreamRef.current
-    if (!stream) {
-      toast.error('Microphone not available.')
-      return
+  const toggleAudio = useCallback(async () => {
+    let stream = localStreamRef.current
+
+    // Dynamically request microphone if stream or audio track is missing
+    if (!stream || stream.getAudioTracks().length === 0) {
+      try {
+        const audioConstraints = selectedDevices.audioInput
+          ? { deviceId: { exact: selectedDevices.audioInput } }
+          : true
+        const newAudioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints })
+        const newAudioTrack = newAudioStream.getAudioTracks()[0]
+
+        if (newAudioTrack) {
+          if (!stream) {
+            stream = new MediaStream([newAudioTrack])
+            localStreamRef.current = stream
+            setLocalStream(stream)
+          } else {
+            stream.addTrack(newAudioTrack)
+          }
+
+          // Add to all active peer connections
+          for (const pc of peersRef.current.values()) {
+            const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'audio')
+            if (sender) {
+              await sender.replaceTrack(newAudioTrack)
+            } else if (pc.connectionState !== 'closed') {
+              pc.addTrack(newAudioTrack, stream)
+            }
+          }
+
+          setAudioEnabled(true)
+          socket.emit('toggle-audio', { roomId, audioEnabled: true })
+          toast.success('Microphone unmuted')
+          await enumerateDevices()
+          return
+        }
+      } catch (err) {
+        console.warn('Microphone permission or hardware error:', err)
+        toast.error('Microphone unavailable or permission denied')
+        return
+      }
     }
 
     const audioTracks = stream.getAudioTracks()
     if (audioTracks.length === 0) {
-      toast.error('No microphone found.')
+      toast.error('No microphone found')
       return
     }
 
@@ -331,21 +368,60 @@ const useWebRTC = (
     toast(newState ? 'Microphone on' : 'Microphone muted', {
       icon: newState ? '🎙️' : '🔇',
     })
-  }, [audioEnabled, roomId])
+  }, [audioEnabled, roomId, selectedDevices.audioInput, enumerateDevices])
 
   /*
    * Toggle local camera
    */
-  const toggleVideo = useCallback(() => {
-    const stream = localStreamRef.current
-    if (!stream) {
-      toast.error('Camera not available.')
-      return
+  const toggleVideo = useCallback(async () => {
+    let stream = localStreamRef.current
+
+    // Dynamically request camera if stream or video track is missing
+    if (!stream || stream.getVideoTracks().length === 0) {
+      try {
+        const videoConstraints = selectedDevices.videoInput
+          ? { deviceId: { exact: selectedDevices.videoInput }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } }
+        const newVideoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
+        const newVideoTrack = newVideoStream.getVideoTracks()[0]
+
+        if (newVideoTrack) {
+          if (!stream) {
+            stream = new MediaStream([newVideoTrack])
+            localStreamRef.current = stream
+            setLocalStream(stream)
+          } else {
+            stream.addTrack(newVideoTrack)
+          }
+
+          // Propagate to peer connections if not screen sharing
+          if (!screenStreamRef.current) {
+            for (const pc of peersRef.current.values()) {
+              const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video')
+              if (sender) {
+                await sender.replaceTrack(newVideoTrack)
+              } else if (pc.connectionState !== 'closed') {
+                pc.addTrack(newVideoTrack, stream)
+              }
+            }
+          }
+
+          setVideoEnabled(true)
+          socket.emit('toggle-video', { roomId, videoEnabled: true })
+          toast.success('Camera turned on')
+          await enumerateDevices()
+          return
+        }
+      } catch (err) {
+        console.warn('Camera permission or hardware error:', err)
+        toast.error('Camera unavailable or permission denied')
+        return
+      }
     }
 
     const videoTracks = stream.getVideoTracks()
     if (videoTracks.length === 0) {
-      toast.error('No camera found.')
+      toast.error('No camera found')
       return
     }
 
@@ -363,7 +439,7 @@ const useWebRTC = (
     toast(newState ? 'Camera on' : 'Camera off', {
       icon: newState ? '📹' : '🚫',
     })
-  }, [videoEnabled, roomId])
+  }, [videoEnabled, roomId, selectedDevices.videoInput, enumerateDevices])
 
   /*
    * Toggle screen share
@@ -406,6 +482,7 @@ const useWebRTC = (
 
         const screenVideoTrack = displayStream.getVideoTracks()[0]
 
+        // Replace track in peer connections or add if not present
         for (const pc of peersRef.current.values()) {
           const senders = pc.getSenders()
           const videoSender = senders.find((s) => s.track && s.track.kind === 'video')
@@ -416,8 +493,11 @@ const useWebRTC = (
           }
         }
 
-        screenVideoTrack.onended = async () => {
-          screenStreamRef.current = null
+        screenVideoTrack.onended = () => {
+          if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach((t) => t.stop())
+            screenStreamRef.current = null
+          }
           setScreenStream(null)
           setIsScreenSharing(false)
           const camTrack = localStreamRef.current?.getVideoTracks()[0]
@@ -426,10 +506,11 @@ const useWebRTC = (
               const senders = pc.getSenders()
               const videoSender = senders.find((s) => s.track && s.track.kind === 'video')
               if (videoSender) {
-                await videoSender.replaceTrack(camTrack)
+                videoSender.replaceTrack(camTrack).catch(() => {})
               }
             }
           }
+          toast('Screen sharing stopped')
         }
 
         toast.success('Screen sharing started')

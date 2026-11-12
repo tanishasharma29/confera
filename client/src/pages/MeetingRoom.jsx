@@ -189,7 +189,8 @@ const MeetingRoom = () => {
       ? meetingDetails.host.id.toString() === user.id.toString()
       : true
 
-  const hostName = meetingDetails?.host?.name || 'Karl Chen'
+  const rawHost = meetingDetails?.host?.name || user?.fullName || 'Karl Chen'
+  const hostName = rawHost.replace(/\|\|.*\]/, '').replace(/[\[\]"']/g, '').trim() || 'Karl Chen'
 
   // End meeting for everyone
   const handleEndMeeting = () => {
