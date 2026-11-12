@@ -2,32 +2,17 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { UserButton, useUser } from '@clerk/react'
 import {
-  LayoutDashboardIcon,
-  HistoryIcon,
-  AsteriskIcon,
+  LayoutDashboard,
+  History,
+  CreditCard,
+  Radio,
+  Sparkles,
+  ListTodo,
 } from 'lucide-react'
 
 const Navbar = () => {
-  const { isLoaded, isSignedIn, user } = useUser()
+  const { isSignedIn, user } = useUser()
   const location = useLocation()
-
-  if (!isLoaded) {
-    return (
-      <header className="w-full max-w-305 mx-auto bg-white/90 backdrop-blur xl:rounded-b-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between border border-slate-200">
-        <Link to="/dashboard" className="flex items-center gap-1.5">
-          <img
-            src="/logo.svg"
-            alt="Confera Logo"
-            className="size-6.5"
-          />
-
-          <span className="text-2xl font-medium tracking-tight text-slate-900">
-            Confera<span className="text-primary">.</span>
-          </span>
-        </Link>
-      </header>
-    )
-  }
 
   const userName =
     user?.fullName ||
@@ -36,86 +21,92 @@ const Navbar = () => {
     'User'
 
   return (
-    <header className="w-full max-w-305 mx-auto bg-white/90 backdrop-blur xl:rounded-b-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between border border-slate-200">
-
-      {/* LEFT SIDE */}
+    <header className="w-full bg-[#171614]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between border-b border-[rgba(234,231,224,0.12)]">
+      {/* Left side */}
       <div className="flex items-center gap-6">
-
-        <Link to="/dashboard" className="flex items-center gap-1.5">
-          <img
-            src="/logo.svg"
-            alt="Confera Logo"
-            className="size-6.5"
-          />
-
-          <span className="text-2xl font-medium tracking-tight text-slate-900">
-            Confera<span className="text-primary">.</span>
+        <Link to="/dashboard" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-[#22201D] border border-[rgba(234,231,224,0.14)] flex items-center justify-center">
+            <Radio className="w-4 h-4 text-[#42B8AD]" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-[#EAE7E0]">
+            Confera<span className="text-[#42B8AD]">.</span>
           </span>
         </Link>
 
         {isSignedIn && (
           <nav className="hidden md:flex items-center gap-1.5 ml-2">
-
             <Link
               to="/dashboard"
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 location.pathname === '/dashboard'
-                  ? 'ring ring-blue-100 bg-blue-50 text-slate-800'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.14)]'
+                  : 'text-[#BDBAB3] hover:text-[#EAE7E0]'
               }`}
             >
-              <LayoutDashboardIcon className="w-3.5 h-3.5" />
+              <LayoutDashboard size={14} />
               Dashboard
             </Link>
 
             <Link
-              to="/sessions"
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
-                location.pathname === '/sessions'
-                  ? 'ring ring-blue-100 bg-blue-50 text-slate-800'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              to="/memory"
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                location.pathname === '/memory'
+                  ? 'bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.14)]'
+                  : 'text-[#BDBAB3] hover:text-[#EAE7E0]'
               }`}
             >
-              <HistoryIcon className="w-3.5 h-3.5" />
+              <Sparkles size={14} className="text-[#42B8AD]" />
+              Memory
+            </Link>
+
+            <Link
+              to="/actions"
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                location.pathname === '/actions'
+                  ? 'bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.14)]'
+                  : 'text-[#BDBAB3] hover:text-[#EAE7E0]'
+              }`}
+            >
+              <ListTodo size={14} />
+              Actions
+            </Link>
+
+            <Link
+              to="/sessions"
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                location.pathname === '/sessions'
+                  ? 'bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.14)]'
+                  : 'text-[#BDBAB3] hover:text-[#EAE7E0]'
+              }`}
+            >
+              <History size={14} />
               Sessions
             </Link>
 
             <Link
               to="/pricing"
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 location.pathname === '/pricing'
-                  ? 'ring ring-blue-100 bg-blue-50 text-slate-800'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-[#292724] text-[#EAE7E0] border border-[rgba(234,231,224,0.14)]'
+                  : 'text-[#BDBAB3] hover:text-[#EAE7E0]'
               }`}
             >
-              <AsteriskIcon className="w-3.5 h-3.5" />
+              <CreditCard size={14} />
               Pricing
             </Link>
-
           </nav>
         )}
       </div>
 
-      {/* RIGHT SIDE */}
+      {/* Right side */}
       {isSignedIn && (
         <div className="flex items-center gap-4">
-
-          <Link
-            to="/sessions"
-            className="md:hidden text-xs font-medium text-slate-600 hover:text-primary flex items-center gap-1"
-          >
-            <HistoryIcon className="w-4 h-4" />
-            Sessions
-          </Link>
-
-          <span className="font-medium hidden sm:inline tracking-wide text-sm text-slate-700">
-            Welcome, {userName}
+          <span className="text-xs font-medium hidden sm:inline text-[#BDBAB3]">
+            {userName}
           </span>
-
           <UserButton />
         </div>
       )}
-
     </header>
   )
 }

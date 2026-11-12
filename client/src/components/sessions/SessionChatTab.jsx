@@ -2,34 +2,34 @@ import React from 'react'
 
 const SessionChatTab = ({ messages = [] }) => {
   return (
-    <div>
-      <h3 className="mb-5 text-lg font-medium text-slate-700">
-        Chat list
+    <div className="space-y-4 font-sans">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-[#42B8AD]">
+        Chat Transcript
       </h3>
 
       {messages.length === 0 ? (
-        <div className="flex min-h-40 items-center justify-center text-sm text-slate-400">
-          No chat messages.
+        <div className="flex min-h-36 items-center justify-center text-xs text-[#77736C]">
+          No chat messages recorded.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {messages.map((message, index) => (
             <div
-              key={`${message.sender}-${message.time}-${index}`}
-              className="rounded-2xl bg-slate-50 px-5 py-4"
+              key={`${message.sender || message.senderName}-${index}`}
+              className="rounded-2xl bg-[#22201D] border border-[rgba(234,231,224,0.08)] px-4 py-3"
             >
               <div className="flex items-center justify-between gap-4">
-                <p className="text-sm font-semibold text-slate-700">
-                  {message.sender}
+                <p className="text-xs font-semibold text-[#EAE7E0]">
+                  {message.sender || message.senderName}
                 </p>
 
-                <span className="text-xs text-slate-400">
-                  {message.time}
+                <span className="text-[10px] text-[#77736C]">
+                  {message.time || (message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
                 </span>
               </div>
 
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {message.message}
+              <p className="mt-1.5 text-xs leading-relaxed text-[#BDBAB3]">
+                {message.message || message.text}
               </p>
             </div>
           ))}

@@ -1,11 +1,11 @@
 import React from 'react'
 import {
-  CrownIcon,
-  XIcon,
-  MicIcon,
-  MicOffIcon,
-  VideoIcon,
-  VideoOffIcon,
+  Crown,
+  X,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
 } from 'lucide-react'
 
 const ParticipantList = ({
@@ -14,7 +14,7 @@ const ParticipantList = ({
   localUser,
   localAudio,
   localVideo,
-  remoteUsers,
+  remoteUsers = [],
   meetingHostId,
 }) => {
   if (!isOpen) return null
@@ -32,56 +32,52 @@ const ParticipantList = ({
   ]
 
   return (
-    <aside className="w-full sm:w-80 h-full bg-white border-l border-slate-200 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <h3 className="font-medium text-slate-900 text-base flex items-center gap-2">
+    <aside className="w-full sm:w-80 h-full bg-[#22201D]/95 backdrop-blur-xl border-l border-[rgba(234,231,224,0.12)] flex flex-col shadow-2xl z-30 font-sans">
+      <div className="p-4 border-b border-[rgba(234,231,224,0.1)] flex items-center justify-between">
+        <h3 className="font-semibold text-[#EAE7E0] text-sm flex items-center gap-2">
           Participants ({allParticipants.length})
         </h3>
 
         <button
           onClick={onClose}
-          className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+          className="p-1.5 rounded-xl hover:bg-[#292724] text-[#BDBAB3] hover:text-[#EAE7E0] transition-colors"
         >
-          <XIcon className="w-5 h-5" />
+          <X size={16} />
         </button>
       </div>
 
-      {/* List */}
       <div className="flex-1 p-4 overflow-y-auto space-y-3">
         {allParticipants.map((p) => {
-          const isHost =
-            meetingHostId && p.userId === meetingHostId
+          const isHost = meetingHostId && p.userId === meetingHostId
 
           return (
             <div
               key={p.socketId}
-              className="flex items-center justify-between gap-3"
+              className="p-2.5 rounded-2xl bg-[#292724]/70 border border-[rgba(234,231,224,0.08)] flex items-center justify-between gap-3"
             >
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-[#171614] flex items-center justify-center text-xs font-bold text-[#EAE7E0]">
+                  {p.userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-medium text-[#EAE7E0] flex items-center gap-1.5 truncate">
                   {p.userName}
-
                   {isHost && (
-                    <CrownIcon
-                      className="w-3.5 h-3.5 text-amber-500"
-                      title="Host"
-                    />
+                    <Crown size={12} className="text-amber-400" title="Host" />
                   )}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-slate-500">
+              <div className="flex items-center gap-2 text-[#77736C]">
                 {p.audioEnabled ? (
-                  <MicIcon className="w-4 h-4 text-slate-600" />
+                  <Mic size={14} className="text-[#42B8AD]" />
                 ) : (
-                  <MicOffIcon className="w-4 h-4 text-rose-500" />
+                  <MicOff size={14} className="text-[#E6534B]" />
                 )}
 
                 {p.videoEnabled ? (
-                  <VideoIcon className="w-4 h-4 text-slate-600" />
+                  <Video size={14} className="text-[#42B8AD]" />
                 ) : (
-                  <VideoOffIcon className="w-4 h-4 text-rose-500" />
+                  <VideoOff size={14} className="text-[#E6534B]" />
                 )}
               </div>
             </div>
